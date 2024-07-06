@@ -1,19 +1,12 @@
 import express from 'express';
+import appRouter from './routes/index.js';
 
 const app = express();
 
+// middlewares
 app.use(express.json());
 
-app.get('/', (req, res, next) => {
-  console.log(req.method);
-
-  res.send('Hello World');
-});
-
-app.post('/', (req, res, next) => {
-  console.log(req.body);
-  res.send('POST');
-});
+app.use('api/v1/products', appRouter);
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {

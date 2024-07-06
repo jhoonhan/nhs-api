@@ -1,13 +1,13 @@
-import { Router } from 'express';
+import express from 'express';
 import {
   createProduct,
   getAllProducts,
   getProduct,
   updateProduct,
   deleteProduct,
-} from '../handlers';
+} from '../handlers/index.js';
 
-const appRouter = Router();
+const appRouter = express.Router();
 
 appRouter.get('/', getAllProducts);
 appRouter.get('/:id', getProduct);
