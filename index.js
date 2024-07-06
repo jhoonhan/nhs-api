@@ -6,7 +6,7 @@ const app = express();
 // middlewares
 app.use(express.json());
 
-app.use('api/v1/products', appRouter);
+app.use('/api/v1/products', appRouter);
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
