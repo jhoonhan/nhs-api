@@ -25,10 +25,46 @@ export const findById = async (id) => {
 export const create = async (title, description, price) => {
   const QUERY = `INSERT INTO products 
                 (title, description, price) 
-                VALUES (?, ?, ?)`;
+                VALUES (
+                    '${title}', 
+                    '${description}', 
+                    ${price}
+                )`;
   try {
     const client = await pool.getConnection();
-    const res = await client.query(QUERY, [title, description, price]);
+    const res = await client.query(QUERY);
+    return res;
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+  }
+};
+
+export const update = async (title, description, price, id) => {
+  const QUERY = `
+                UPDATE products
+                SET 
+                    title = '${title}', 
+                    description = '${description}', 
+                    price = ${price}
+                WHERE id = ${id}
+                `;
+  try {
+    const client = await pool.getConnection();
+    const res = await client.query(QUERY);
+    return res;
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+  }
+};
+
+export const deleteRecord = async (id) => {
+  const QUERY = `
+                  DELETE FROM products
+                  WHERE id = ${id}
+                  `;
+  try {
+    const client = await pool.getConnection();
+    const res = await client.query(QUERY);
     return res;
   } catch (error) {
     console.error(`ERROR: ${error}`);
