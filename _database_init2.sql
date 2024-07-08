@@ -79,7 +79,7 @@ DROP TABLE IF EXISTS `nurse`;
 CREATE TABLE `nurse` (
   `user_id` int NOT NULL,
   `band` int NOT NULL,
-  `seniority` int NOT NULL DEFAULT '1',
+  `seniority` int NOT NULL DEFAULT 1,
   `can_charge` tinyint(1) NOT NULL,
   `contract_type` enum('full','part') NOT NULL,
   PRIMARY KEY (`user_id`),
@@ -107,19 +107,18 @@ DROP TABLE IF EXISTS `shift`;
 CREATE TABLE `shift` (
   `shift_id` int NOT NULL AUTO_INCREMENT,
   `day_id` int NOT NULL,
-  `is_day` tinyint(1) NOT NULL DEFAULT '1',
-  `approved_staff` int NOT NULL DEFAULT '0',
+  `is_day` boolean NOT NULL DEFAULT 1,
+  `approved_staff` int NOT NULL DEFAULT 0,
   `charge_nurse` int,
   `min_staff` int NOT NULL,
   `max_staff` int NOT NULL,
   `optimal_staff` int NOT NULL,
-  `status` enum('approved','open','closed') NOT NULL DEFAULT 'closed',
+  `status` ENUM('approved', 'open', 'closed') NOT NULL DEFAULT 'closed',
   PRIMARY KEY (`shift_id`),
-  KEY `charge_nurse` (`charge_nurse`),
-  KEY `day_id_index` (`day_id`) USING BTREE,
-  CONSTRAINT `shift_ibfk_1` FOREIGN KEY (`day_id`) REFERENCES `day` (`day_id`),
-  CONSTRAINT `shift_ibfk_2` FOREIGN KEY (`charge_nurse`) REFERENCES `nurse` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  FOREIGN KEY (`day_id`) REFERENCES `day`(`day_id`),
+  FOREIGN KEY (`charge_nurse`) REFERENCES `nurse`(`user_id`),
+  INDEX `day_id_index` USING BTREE (`day_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -128,7 +127,6 @@ CREATE TABLE `shift` (
 
 LOCK TABLES `shift` WRITE;
 /*!40000 ALTER TABLE `shift` DISABLE KEYS */;
-INSERT INTO `shift` VALUES (5,12,1,0,NULL,3,5,4,'open'),(6,12,0,0,NULL,2,4,3,'open');
 /*!40000 ALTER TABLE `shift` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -168,4 +166,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-07-08 20:55:59
+-- Dump completed on 2024-07-08 20:27:25
