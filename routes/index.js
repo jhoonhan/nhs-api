@@ -1,18 +1,18 @@
 import express from 'express';
 import {
-  createProduct,
-  getAllProducts,
-  getProduct,
-  updateProduct,
-  deleteProduct,
+    createRequest,
+    getAllRequests,
+    getRequest,
+    updateRequest,
+    deleteRequest,
 } from '../handlers/index.js';
 
 const appRouter = express.Router();
 
-appRouter.get('/', getAllProducts);
-appRouter.get('/:id', getProduct);
-appRouter.post('/create', createProduct);
-appRouter.put('/update/:id', updateProduct);
-appRouter.delete('/delete/:id', deleteProduct);
+appRouter.get('/', getAllRequests);
+appRouter.get('/:id', getRequest);
+appRouter.post('/create', createRequest);
+appRouter.put('/update/:id', updateRequest);
+appRouter.delete('/delete/:id', deleteRequest);
 
 export default appRouter;
