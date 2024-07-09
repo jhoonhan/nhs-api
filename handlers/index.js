@@ -4,6 +4,7 @@ export const getAllRequests = async (req, res) => {
     try {
         const requests = await find();
         return res.status(200).json(requests);
+
     } catch (error) {
         console.error(error);
         res.status(500).json({message: 'Server Error'});

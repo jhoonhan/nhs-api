@@ -18,6 +18,38 @@ USE `roster`;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `approved`
+--
+
+DROP TABLE IF EXISTS `approved`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `approved` (
+  `shift_id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `status` enum('approved','pending') NOT NULL,
+  `approved_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `approved_by` int NOT NULL,
+  PRIMARY KEY (`shift_id`, `user_id`),
+  KEY `approved_by` (`approved_by`),
+  KEY `shift_id` (`shift_id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `approved_ibfk_1` FOREIGN KEY (`approved_by`) REFERENCES `user` (`user_id`),
+  CONSTRAINT `approved_ibfk_2` FOREIGN KEY (`shift_id`) REFERENCES `shift` (`shift_id`),
+  CONSTRAINT `approved_ibfk_3` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `approved`
+--
+
+LOCK TABLES `approved` WRITE;
+/*!40000 ALTER TABLE `approved` DISABLE KEYS */;
+/*!40000 ALTER TABLE `approved` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `day`
 --
 
@@ -98,6 +130,35 @@ INSERT INTO `nurse` VALUES (1,6,5,1,'full'),(2,5,1,0,'full'),(4,5,1,0,'full'),(5
 UNLOCK TABLES;
 
 --
+-- Table structure for table `request`
+--
+
+DROP TABLE IF EXISTS `request`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `request` (
+  `shift_id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `priority` int NOT NULL,
+  `request_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `status` enum('approved','pending') NOT NULL DEFAULT 'pending',
+  PRIMARY KEY (`shift_id`, `user_id`),
+  KEY `shift_id_index` (`shift_id`) USING BTREE,
+  CONSTRAINT `request_ibfk_1` FOREIGN KEY (`shift_id`) REFERENCES `shift` (`shift_id`),
+  CONSTRAINT `request_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `request`
+--
+
+LOCK TABLES `request` WRITE;
+/*!40000 ALTER TABLE `request` DISABLE KEYS */;
+/*!40000 ALTER TABLE `request` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `shift`
 --
 
@@ -109,7 +170,7 @@ CREATE TABLE `shift` (
   `day_id` int NOT NULL,
   `is_day` tinyint(1) NOT NULL DEFAULT '1',
   `approved_staff` int NOT NULL DEFAULT '0',
-  `charge_nurse` int,
+  `charge_nurse` int DEFAULT NULL,
   `min_staff` int NOT NULL,
   `max_staff` int NOT NULL,
   `optimal_staff` int NOT NULL,
@@ -168,4 +229,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-07-08 20:55:59
+-- Dump completed on 2024-07-09 20:17:40

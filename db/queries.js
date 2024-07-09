@@ -1,34 +1,33 @@
 import {pool} from './index.js';
 
 export const find = async () => {
-    const QUERY = 'SELECT * FROM requests';
+    const QUERY = 'SELECT * FROM request';
     try {
         const client = await pool.getConnection();
         const res = await client.query(QUERY);
-        return res;
+        return res[0];
     } catch (error) {
         console.error(`ERROR: ${error}`);
     }
 };
 
 export const findById = async (id) => {
-    const QUERY = `SELECT * FROM requests WHERE id = ?`;
+    const QUERY = `SELECT * FROM request WHERE request_id = ?`;
     try {
         const client = await pool.getConnection();
         const res = await client.query(QUERY, [id]);
-        return res;
+        return res[0];
     } catch (error) {
         console.error(`ERROR: ${error}`);
     }
 };
 
-export const create = async (title, description, price) => {
-    const QUERY = `INSERT INTO requests 
+export const create = async (shift_id, user_id) => {
+    const QUERY = `INSERT INTO request 
                 (title, description, price) 
                 VALUES (
-                    '${title}', 
-                    '${description}', 
-                    ${price}
+                    ${shift_id}, 
+                    ${user_id}
                 )`;
     try {
         const client = await pool.getConnection();
@@ -41,7 +40,7 @@ export const create = async (title, description, price) => {
 
 export const update = async (title, description, price, id) => {
     const QUERY = `
-                UPDATE requests
+                UPDATE request
                 SET 
                     title = '${title}', 
                     description = '${description}', 

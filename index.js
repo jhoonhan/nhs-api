@@ -7,7 +7,7 @@ const app = express();
 // middlewares
 app.use(express.json());
 
-app.use('/api/v1/requests', appRouter);
+app.use('/api/v1/request', appRouter);
 
 const PORT = process.env.PORT || 5001;
 
