@@ -26,6 +26,20 @@ export const findRequestById = async (shift_id, user_id) => {
     }
 };
 
+export const findRequestByShift = async (shift_id) => {
+    const QUERY = `SELECT * FROM request 
+                          WHERE shift_id = ${shift_id}
+                          `;
+    try {
+        const client = await pool.getConnection();
+        const res = await client.query(QUERY);
+        return res[0];
+    } catch (error) {
+        console.error(`ERROR: ${error}`);
+        throw error;
+    }
+};
+
 export const createRequest = async (shift_id, user_id, priority) => {
     const QUERY = `INSERT INTO request 
                 (shift_id, user_id, priority) 
