@@ -1,69 +1,75 @@
-import {find, findById, create, update, deleteRecord} from '../db/queries.js';
+import {find, findRequestById, createRequest, deleteRecord} from '../db/queries.js';
 
-export const getAllRequests = async (req, res) => {
+const PRIORITY = 0
+
+export const getAllRequestsHandler = async (req, res) => {
     try {
         const requests = await find();
-        return res.status(200).json(requests);
+        return res.status(200).json({status: 'success', data: requests});
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({message: 'Server Error'});
+        res.status(500).json({status: 'fail', message: 'Server Error'});
     }
 };
 
-export const getRequest = async (req, res) => {
+export const getRequestByIdHandler = async (req, res) => {
     try {
-        const request = await findById(req.params.id);
+        const shiftId = req.params.shift_id;
+        const userId = req.params.user_id;
+        const request = await findRequestById(shiftId, userId);
         return res.status(200).json(request);
     } catch (error) {
         console.error(error);
-        res.status(500).json({message: 'Server Error'});
+        res.status(500).json({status: 'fail', message: 'Server Error'});
     }
 };
 
 
-export const createRequest = async (req, res) => {
-    const {title, description, price} = req.body;
+export const createRequestHandler = async (req, res) => {
+    const {shift_id, user_id} = req.body;
 
-    if (!title || !description || !price) {
-        return res.status(403).json({message: 'Please provide all fields'});
+    if (typeof (shift_id) !== 'number' || typeof (user_id) !== 'number') {
+        return res.status(403).json({message: 'Input validation failed'});
     }
 
     try {
-        const request = await create(title, description, price);
+        const request = await createRequest(shift_id, user_id, PRIORITY);
+        return res.status(201).json({status: 'success', data: request});
 
-        return res.status(201).json({request});
     } catch (error) {
         console.error(error);
-        res.status(500).json({message: 'Server Error'});
+        return res.status(500).json({status: 'fail', message: error.message});
     }
 };
 
 
-export const updateRequest = async (req, res) => {
-    const {title, description, price} = req.body;
-    const id = req.params.id;
+// export const updateRequestHandler = async (req, res) => {
+//     const {shift_id, user_id} = req.body;
+//     const id = req.params.id;
+//
+//     if (!title || !description || !price) {
+//         return res.status(403).json({message: 'Please provide all fields'});
+//     }
+//
+//     try {
+//         const request = await update(title, description, price, id);
+//
+//         return res.status(201).json({request});
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({message: 'Server Error'});
+//     }
+// };
 
-    if (!title || !description || !price) {
-        return res.status(403).json({message: 'Please provide all fields'});
-    }
-
+export const deleteRequestHandler = async (req, res) => {
     try {
-        const request = await update(title, description, price, id);
-
-        return res.status(201).json({request});
+        const shiftId = req.params.shift_id;
+        const userId = req.params.user_id;
+        const request = await deleteRecord(shiftId, userId);
+        return res.status(200).json({status: 'success', data: request});
     } catch (error) {
         console.error(error);
-        res.status(500).json({message: 'Server Error'});
-    }
-};
-
-export const deleteRequest = async (req, res) => {
-    try {
-        const request = await deleteRecord(req.params.id);
-        return res.status(200).json(request);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({message: 'Server Error'});
+        res.status(500).json({status: 'fail', message: error.message});
     }
 };
