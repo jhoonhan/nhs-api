@@ -39,14 +39,14 @@ export const getRequestByShiftIdHandler = async (req, res) => {
 
 
 export const createRequestHandler = async (req, res) => {
-    const {shift_id, user_id} = req.body;
+    const {shift_id, user_id, priority_user} = req.body;
 
     if (typeof (shift_id) !== 'number' || typeof (user_id) !== 'number') {
         return res.status(403).json({message: 'Input validation failed'});
     }
 
     try {
-        const request = await createRequest(shift_id, user_id, PRIORITY);
+        const request = await createRequest(shift_id, user_id, priority_user);
         return res.status(201).json({status: 'success', data: request});
 
     } catch (error) {
@@ -85,3 +85,16 @@ export const deleteRequestHandler = async (req, res) => {
         res.status(500).json({status: 'fail', message: error.message});
     }
 };
+
+
+export const getComputedShiftHandler = async (req, res) => {
+    try {
+        const shiftId = req.params.shift_id;
+        console.log(shiftId);
+        return res.status(200).json({status: 'success', data: 'aang'});
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({status: 'fail', message: error.message});
+    }
+
+}

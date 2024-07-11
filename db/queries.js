@@ -40,13 +40,13 @@ export const findRequestByShift = async (shift_id) => {
     }
 };
 
-export const createRequest = async (shift_id, user_id, priority) => {
+export const createRequest = async (shift_id, user_id, priority_user) => {
     const QUERY = `INSERT INTO request 
-                (shift_id, user_id, priority) 
+                (shift_id, user_id, priority_user) 
                 VALUES (
                     ${shift_id}, 
                     ${user_id},
-                    ${priority}
+                    ${priority_user}
                 )`;
     try {
         const client = await pool.getConnection();
