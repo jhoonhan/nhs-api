@@ -11,3 +11,12 @@ CREATE TABLE week (
   FOREIGN KEY (user_id) REFERENCES user (user_id),
   INDEX (user_id)
 );
+
+
+CREATE TABLE schedule_priority (
+	priority_id INT,
+	user_id INT,
+	priority INT not null,
+	PRIMARY KEY (priority_id, user_id),
+	FOREIGN KEY (user_id) REFERENCES user (user_id)
+)

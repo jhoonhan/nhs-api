@@ -29,6 +29,7 @@ export const findRequestById = async (shift_id, user_id) => {
 export const findRequestByShift = async (shift_id) => {
     const QUERY = `SELECT * FROM request 
                           WHERE shift_id = ${shift_id}
+                          ORDER BY priority_user DESC
                           `;
     try {
         const client = await pool.getConnection();

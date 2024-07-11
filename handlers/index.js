@@ -1,5 +1,7 @@
 import {find, findRequestById, createRequest, deleteRecord, findRequestByShift} from '../db/queries.js';
 
+import {computeShift} from "../scheduler/index.js";
+
 const PRIORITY = 0
 
 export const getAllRequestsHandler = async (req, res) => {
@@ -89,9 +91,10 @@ export const deleteRequestHandler = async (req, res) => {
 
 export const getComputedShiftHandler = async (req, res) => {
     try {
-        const shiftId = req.params.shift_id;
-        console.log(shiftId);
-        return res.status(200).json({status: 'success', data: 'aang'});
+        const shift_id = req.params.shift_id;
+        const computedShift = await computeShift(shift_id);
+
+        return res.status(200).json({status: 'success', data: computedShift});
     } catch (error) {
         console.error(error);
         res.status(500).json({status: 'fail', message: error.message});
