@@ -137,6 +137,33 @@ LOCK TABLES `request` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `schedule_priority`
+--
+
+DROP TABLE IF EXISTS `schedule_priority`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `schedule_priority` (
+  `priority_id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `priority` int NOT NULL,
+  PRIMARY KEY (`priority_id`,`user_id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `schedule_priority_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `schedule_priority`
+--
+
+LOCK TABLES `schedule_priority` WRITE;
+/*!40000 ALTER TABLE `schedule_priority` DISABLE KEYS */;
+INSERT INTO `schedule_priority` VALUES (1,1,1),(1,2,2),(1,3,3),(1,4,4),(1,5,5),(1,6,6),(1,7,7),(1,8,8),(1,9,9),(1,10,10),(1,11,11),(1,12,12),(1,13,13),(1,14,14),(1,15,15),(2,1,15),(2,2,14),(2,3,13),(2,4,12),(2,5,11),(2,6,10),(2,7,9),(2,8,8),(2,9,7),(2,10,6),(2,11,5),(2,12,4),(2,13,3),(2,14,2),(2,15,1),(3,1,1),(3,2,2),(3,3,3),(3,4,4),(3,5,5),(3,6,6),(3,7,7),(3,8,8),(3,9,9),(3,10,10),(3,11,11),(3,12,12),(3,13,13),(3,14,14),(3,15,15);
+/*!40000 ALTER TABLE `schedule_priority` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `shift`
 --
 
@@ -146,6 +173,7 @@ DROP TABLE IF EXISTS `shift`;
 CREATE TABLE `shift` (
   `shift_id` int NOT NULL AUTO_INCREMENT,
   `day_id` int NOT NULL,
+  `priority_id` int NOT NULL,
   `is_day` tinyint(1) NOT NULL DEFAULT '1',
   `approved_staff` int NOT NULL DEFAULT '0',
   `charge_nurse` int DEFAULT NULL,
@@ -156,8 +184,10 @@ CREATE TABLE `shift` (
   PRIMARY KEY (`shift_id`),
   KEY `charge_nurse` (`charge_nurse`),
   KEY `day_id_index` (`day_id`) USING BTREE,
+  KEY `shift_ibfk_2` (`priority_id`),
   CONSTRAINT `shift_ibfk_1` FOREIGN KEY (`day_id`) REFERENCES `day` (`day_id`),
-  CONSTRAINT `shift_ibfk_2` FOREIGN KEY (`charge_nurse`) REFERENCES `nurse` (`user_id`)
+  CONSTRAINT `shift_ibfk_2` FOREIGN KEY (`priority_id`) REFERENCES `schedule_priority` (`priority_id`),
+  CONSTRAINT `shift_ibfk_3` FOREIGN KEY (`charge_nurse`) REFERENCES `nurse` (`user_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=85 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -167,7 +197,7 @@ CREATE TABLE `shift` (
 
 LOCK TABLES `shift` WRITE;
 /*!40000 ALTER TABLE `shift` DISABLE KEYS */;
-INSERT INTO `shift` VALUES (1,1,1,0,NULL,3,5,4,'closed'),(2,1,0,0,NULL,2,4,3,'closed'),(3,2,1,0,NULL,3,5,4,'closed'),(4,2,0,0,NULL,2,4,3,'closed'),(5,3,1,0,NULL,3,5,4,'closed'),(6,3,0,0,NULL,2,4,3,'closed'),(7,4,1,0,NULL,3,5,4,'closed'),(8,4,0,0,NULL,2,4,3,'closed'),(9,5,1,0,NULL,3,5,4,'closed'),(10,5,0,0,NULL,2,4,3,'closed'),(11,6,1,0,NULL,3,5,4,'closed'),(12,6,0,0,NULL,2,4,3,'closed'),(13,7,1,0,NULL,3,5,4,'closed'),(14,7,0,0,NULL,2,4,3,'closed'),(15,8,1,0,NULL,3,5,4,'closed'),(16,8,0,0,NULL,2,4,3,'closed'),(17,9,1,0,NULL,3,5,4,'closed'),(18,9,0,0,NULL,2,4,3,'closed'),(19,10,1,0,NULL,3,5,4,'closed'),(20,10,0,0,NULL,2,4,3,'closed'),(21,11,1,0,NULL,3,5,4,'closed'),(22,11,0,0,NULL,2,4,3,'closed'),(23,12,1,0,NULL,3,5,4,'closed'),(24,12,0,0,NULL,2,4,3,'closed'),(25,13,1,0,NULL,3,5,4,'closed'),(26,13,0,0,NULL,2,4,3,'closed'),(27,14,1,0,NULL,3,5,4,'closed'),(28,14,0,0,NULL,2,4,3,'closed'),(29,15,1,0,NULL,3,5,4,'closed'),(30,15,0,0,NULL,2,4,3,'closed'),(31,16,1,0,NULL,3,5,4,'closed'),(32,16,0,0,NULL,2,4,3,'closed'),(33,17,1,0,NULL,3,5,4,'closed'),(34,17,0,0,NULL,2,4,3,'closed'),(35,18,1,0,NULL,3,5,4,'closed'),(36,18,0,0,NULL,2,4,3,'closed'),(37,19,1,0,NULL,3,5,4,'closed'),(38,19,0,0,NULL,2,4,3,'closed'),(39,20,1,0,NULL,3,5,4,'closed'),(40,20,0,0,NULL,2,4,3,'closed'),(41,21,1,0,NULL,3,5,4,'closed'),(42,21,0,0,NULL,2,4,3,'closed'),(43,22,1,0,NULL,3,5,4,'closed'),(44,22,0,0,NULL,2,4,3,'closed'),(45,23,1,0,NULL,3,5,4,'closed'),(46,23,0,0,NULL,2,4,3,'closed'),(47,24,1,0,NULL,3,5,4,'closed'),(48,24,0,0,NULL,2,4,3,'closed'),(49,25,1,0,NULL,3,5,4,'closed'),(50,25,0,0,NULL,2,4,3,'closed'),(51,26,1,0,NULL,3,5,4,'closed'),(52,26,0,0,NULL,2,4,3,'closed'),(53,27,1,0,NULL,3,5,4,'closed'),(54,27,0,0,NULL,2,4,3,'closed'),(55,28,1,0,NULL,3,5,4,'closed'),(56,28,0,0,NULL,2,4,3,'closed'),(57,29,1,0,NULL,3,5,4,'closed'),(58,29,0,0,NULL,2,4,3,'closed'),(59,30,1,0,NULL,3,5,4,'closed'),(60,30,0,0,NULL,2,4,3,'closed'),(61,31,1,0,NULL,3,5,4,'closed'),(62,31,0,0,NULL,2,4,3,'closed'),(63,32,1,0,NULL,3,5,4,'closed'),(64,32,0,0,NULL,2,4,3,'closed'),(65,33,1,0,NULL,3,5,4,'closed'),(66,33,0,0,NULL,2,4,3,'closed'),(67,34,1,0,NULL,3,5,4,'closed'),(68,34,0,0,NULL,2,4,3,'closed'),(69,35,1,0,NULL,3,5,4,'closed'),(70,35,0,0,NULL,2,4,3,'closed'),(71,36,1,0,NULL,3,5,4,'closed'),(72,36,0,0,NULL,2,4,3,'closed'),(73,37,1,0,NULL,3,5,4,'closed'),(74,37,0,0,NULL,2,4,3,'closed'),(75,38,1,0,NULL,3,5,4,'closed'),(76,38,0,0,NULL,2,4,3,'closed'),(77,39,1,0,NULL,3,5,4,'closed'),(78,39,0,0,NULL,2,4,3,'closed'),(79,40,1,0,NULL,3,5,4,'closed'),(80,40,0,0,NULL,2,4,3,'closed'),(81,41,1,0,NULL,3,5,4,'closed'),(82,41,0,0,NULL,2,4,3,'closed'),(83,42,1,0,NULL,3,5,4,'closed'),(84,42,0,0,NULL,2,4,3,'closed');
+INSERT INTO `shift` VALUES (1,1,1,1,0,NULL,3,5,4,'closed'),(2,1,1,0,0,NULL,2,4,3,'closed'),(3,2,1,1,0,NULL,3,5,4,'closed'),(4,2,1,0,0,NULL,2,4,3,'closed'),(5,3,1,1,0,NULL,3,5,4,'closed'),(6,3,1,0,0,NULL,2,4,3,'closed'),(7,4,1,1,0,NULL,3,5,4,'closed'),(8,4,1,0,0,NULL,2,4,3,'closed'),(9,5,1,1,0,NULL,3,5,4,'closed'),(10,5,1,0,0,NULL,2,4,3,'closed'),(11,6,1,1,0,NULL,3,5,4,'closed'),(12,6,1,0,0,NULL,2,4,3,'closed'),(13,7,1,1,0,NULL,3,5,4,'closed'),(14,7,1,0,0,NULL,2,4,3,'closed'),(15,8,1,1,0,NULL,3,5,4,'closed'),(16,8,1,0,0,NULL,2,4,3,'closed'),(17,9,1,1,0,NULL,3,5,4,'closed'),(18,9,1,0,0,NULL,2,4,3,'closed'),(19,10,1,1,0,NULL,3,5,4,'closed'),(20,10,1,0,0,NULL,2,4,3,'closed'),(21,11,1,1,0,NULL,3,5,4,'closed'),(22,11,1,0,0,NULL,2,4,3,'closed'),(23,12,1,1,0,NULL,3,5,4,'closed'),(24,12,1,0,0,NULL,2,4,3,'closed'),(25,13,1,1,0,NULL,3,5,4,'closed'),(26,13,1,0,0,NULL,2,4,3,'closed'),(27,14,1,1,0,NULL,3,5,4,'closed'),(28,14,1,0,0,NULL,2,4,3,'closed'),(29,15,1,1,0,NULL,3,5,4,'closed'),(30,15,1,0,0,NULL,2,4,3,'closed'),(31,16,1,1,0,NULL,3,5,4,'closed'),(32,16,1,0,0,NULL,2,4,3,'closed'),(33,17,1,1,0,NULL,3,5,4,'closed'),(34,17,1,0,0,NULL,2,4,3,'closed'),(35,18,1,1,0,NULL,3,5,4,'closed'),(36,18,2,0,0,NULL,2,4,3,'closed'),(37,19,2,1,0,NULL,3,5,4,'closed'),(38,19,2,0,0,NULL,2,4,3,'closed'),(39,20,2,1,0,NULL,3,5,4,'closed'),(40,20,2,0,0,NULL,2,4,3,'closed'),(41,21,2,1,0,NULL,3,5,4,'closed'),(42,21,2,0,0,NULL,2,4,3,'closed'),(43,22,2,1,0,NULL,3,5,4,'closed'),(44,22,2,0,0,NULL,2,4,3,'closed'),(45,23,2,1,0,NULL,3,5,4,'closed'),(46,23,2,0,0,NULL,2,4,3,'closed'),(47,24,2,1,0,NULL,3,5,4,'closed'),(48,24,2,0,0,NULL,2,4,3,'closed'),(49,25,2,1,0,NULL,3,5,4,'closed'),(50,25,2,0,0,NULL,2,4,3,'closed'),(51,26,2,1,0,NULL,3,5,4,'closed'),(52,26,2,0,0,NULL,2,4,3,'closed'),(53,27,2,1,0,NULL,3,5,4,'closed'),(54,27,2,0,0,NULL,2,4,3,'closed'),(55,28,2,1,0,NULL,3,5,4,'closed'),(56,28,2,0,0,NULL,2,4,3,'closed'),(57,29,2,1,0,NULL,3,5,4,'closed'),(58,29,2,0,0,NULL,2,4,3,'closed'),(59,30,2,1,0,NULL,3,5,4,'closed'),(60,30,2,0,0,NULL,2,4,3,'closed'),(61,31,2,1,0,NULL,3,5,4,'closed'),(62,31,2,0,0,NULL,2,4,3,'closed'),(63,32,2,1,0,NULL,3,5,4,'closed'),(64,32,2,0,0,NULL,2,4,3,'closed'),(65,33,2,1,0,NULL,3,5,4,'closed'),(66,33,2,0,0,NULL,2,4,3,'closed'),(67,34,2,1,0,NULL,3,5,4,'closed'),(68,34,2,0,0,NULL,2,4,3,'closed'),(69,35,2,1,0,NULL,3,5,4,'closed'),(70,35,2,0,0,NULL,2,4,3,'closed'),(71,36,3,1,0,NULL,3,5,4,'closed'),(72,36,3,0,0,NULL,2,4,3,'closed'),(73,37,3,1,0,NULL,3,5,4,'closed'),(74,37,3,0,0,NULL,2,4,3,'closed'),(75,38,3,1,0,NULL,3,5,4,'closed'),(76,38,3,0,0,NULL,2,4,3,'closed'),(77,39,3,1,0,NULL,3,5,4,'closed'),(78,39,3,0,0,NULL,2,4,3,'closed'),(79,40,3,1,0,NULL,3,5,4,'closed'),(80,40,3,0,0,NULL,2,4,3,'closed'),(81,41,3,1,0,NULL,3,5,4,'closed'),(82,41,3,0,0,NULL,2,4,3,'closed'),(83,42,3,1,0,NULL,3,5,4,'closed'),(84,42,3,0,0,NULL,2,4,3,'closed');
 /*!40000 ALTER TABLE `shift` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -208,13 +238,16 @@ DROP TABLE IF EXISTS `week`;
 CREATE TABLE `week` (
   `week_id` int NOT NULL AUTO_INCREMENT,
   `user_id` int NOT NULL,
+  `priority_id` int NOT NULL,
   `year` int NOT NULL,
   `week_start` date NOT NULL,
   `week_end` date NOT NULL,
   `status` enum('completed','pending') NOT NULL DEFAULT 'pending',
   PRIMARY KEY (`week_id`,`user_id`),
   KEY `user_id` (`user_id`),
-  CONSTRAINT `week_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`)
+  KEY `week_ibfk_2` (`priority_id`),
+  CONSTRAINT `week_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`),
+  CONSTRAINT `week_ibfk_2` FOREIGN KEY (`priority_id`) REFERENCES `schedule_priority` (`priority_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -224,7 +257,7 @@ CREATE TABLE `week` (
 
 LOCK TABLES `week` WRITE;
 /*!40000 ALTER TABLE `week` DISABLE KEYS */;
-INSERT INTO `week` VALUES (34,1,2024,'2024-08-04','2024-08-10','pending'),(35,1,2024,'2024-08-11','2024-08-17','pending'),(36,1,2024,'2024-08-12','2024-08-24','pending'),(37,1,2024,'2024-08-25','2024-08-31','pending'),(38,1,2024,'2024-09-01','2024-09-07','pending'),(39,1,2024,'2024-09-08','2024-09-14','pending');
+INSERT INTO `week` VALUES (34,1,1,2024,'2024-08-04','2024-08-10','pending'),(35,1,1,2024,'2024-08-11','2024-08-17','pending'),(36,1,1,2024,'2024-08-12','2024-08-24','pending'),(37,1,1,2024,'2024-08-25','2024-08-31','pending'),(38,1,2,2024,'2024-09-01','2024-09-07','pending'),(39,1,2,2024,'2024-09-08','2024-09-14','pending');
 /*!40000 ALTER TABLE `week` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -237,4 +270,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-07-10 22:55:58
+-- Dump completed on 2024-07-12 19:46:55

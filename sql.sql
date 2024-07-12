@@ -14,9 +14,9 @@ CREATE TABLE week (
 
 
 CREATE TABLE schedule_priority (
-	priority_id INT,
-	user_id INT,
+	priority_id INT not null,
+	user_id INT not null,
 	priority INT not null,
 	PRIMARY KEY (priority_id, user_id),
 	FOREIGN KEY (user_id) REFERENCES user (user_id)
-)
+);
