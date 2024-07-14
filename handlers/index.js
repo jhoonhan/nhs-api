@@ -1,12 +1,20 @@
-import {find, findRequestById, createRequest, deleteRecord, findRequestByShift} from '../db/queries.js';
+import {
+    getAllRequest,
+    getRequestById,
+    createRequest,
+    updateRequest,
+    deleteRecord,
+    getRequestByShiftId,
+} from '../db/queries.js';
 
 import {computeShift} from "../scheduler/index.js";
+import {pool} from "../db/index.js";
 
-const PRIORITY = 0
+const PRIORITY_COMPUTED = 0
 
 export const getAllRequestsHandler = async (req, res) => {
     try {
-        const requests = await find();
+        const requests = await getAllRequest();
         return res.status(200).json({status: 'success', data: requests});
 
     } catch (error) {
@@ -19,7 +27,7 @@ export const getRequestByRequestIdHandler = async (req, res) => {
     try {
         const shiftId = req.params.shift_id;
         const userId = req.params.user_id;
-        const request = await findRequestById(shiftId, userId);
+        const request = await getRequestById(shiftId, userId);
         return res.status(200).json(request);
     } catch (error) {
         console.error(error);
@@ -31,7 +39,7 @@ export const getRequestByRequestIdHandler = async (req, res) => {
 export const getRequestByShiftIdHandler = async (req, res) => {
     try {
         const shiftId = req.params.shift_id;
-        const request = await findRequestByShift(shiftId, userId);
+        const request = await getRequestByShiftId(shiftId, userId);
         return res.status(200).json(request);
     } catch (error) {
         console.error(error);
@@ -48,7 +56,7 @@ export const createRequestHandler = async (req, res) => {
     }
 
     try {
-        const request = await createRequest(shift_id, user_id, priority_user);
+        const request = await createRequest(shift_id, user_id, priority_user, PRIORITY_COMPUTED);
         return res.status(201).json({status: 'success', data: request});
 
     } catch (error) {
@@ -58,23 +66,18 @@ export const createRequestHandler = async (req, res) => {
 };
 
 
-// export const updateRequestHandler = async (req, res) => {
-//     const {shift_id, user_id} = req.body;
-//     const id = req.params.id;
-//
-//     if (!title || !description || !price) {
-//         return res.status(403).json({message: 'Please provide all fields'});
-//     }
-//
-//     try {
-//         const request = await update(title, description, price, id);
-//
-//         return res.status(201).json({request});
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({message: 'Server Error'});
-//     }
-// };
+export const updateRequestHandler = async (req, res) => {
+    const {shift_id, user_id, status} = req.body;
+
+    try {
+        const request = await updateRequest(shift_id, user_id, status);
+
+        return res.status(201).json({request});
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({message: 'Server Error'});
+    }
+};
 
 export const deleteRequestHandler = async (req, res) => {
     try {
@@ -101,3 +104,4 @@ export const getComputedShiftHandler = async (req, res) => {
     }
 
 }
+

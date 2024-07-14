@@ -1,6 +1,6 @@
 import {pool} from './index.js';
 
-export const find = async () => {
+export const getAllRequest = async () => {
     const QUERY = 'SELECT * FROM request';
     try {
         const client = await pool.getConnection();
@@ -11,7 +11,7 @@ export const find = async () => {
     }
 };
 
-export const findRequestById = async (shift_id, user_id) => {
+export const getRequestById = async (shift_id, user_id) => {
     const QUERY = `SELECT * FROM request 
                           WHERE shift_id = ${shift_id}
                             AND user_id = ${user_id}
@@ -26,7 +26,7 @@ export const findRequestById = async (shift_id, user_id) => {
     }
 };
 
-export const findRequestByShift = async (shift_id) => {
+export const getRequestByShiftId = async (shift_id) => {
     const QUERY = `SELECT * FROM request 
                           WHERE shift_id = ${shift_id}
                           ORDER BY priority_user DESC
@@ -41,13 +41,14 @@ export const findRequestByShift = async (shift_id) => {
     }
 };
 
-export const createRequest = async (shift_id, user_id, priority_user) => {
+export const createRequest = async (shift_id, user_id, priority_user, p_computed) => {
     const QUERY = `INSERT INTO request 
-                (shift_id, user_id, priority_user) 
+                (shift_id, user_id, priority_user, priority_computed) 
                 VALUES (
                     ${shift_id}, 
                     ${user_id},
-                    ${priority_user}
+                    ${priority_user},
+                    ${p_computed}
                 )`;
     try {
         const client = await pool.getConnection();
@@ -60,23 +61,21 @@ export const createRequest = async (shift_id, user_id, priority_user) => {
 };
 
 
-// export const update = async (title, description, price, id) => {
-//     const QUERY = `
-//                 UPDATE request
-//                 SET
-//                     title = '${title}',
-//                     description = '${description}',
-//                     price = ${price}
-//                 WHERE id = ${id}
-//                 `;
-//     try {
-//         const client = await pool.getConnection();
-//         const res = await client.query(QUERY);
-//         return res;
-//     } catch (error) {
-//         console.error(`ERROR: ${error}`);
-//     }
-// };
+export const updateRequest = async (shift_id, user_id, status) => {
+    const QUERY = `
+                UPDATE request
+                SET
+                    status = '${status}'
+                WHERE id = ${shift_id} AND user_id = ${user_id}
+                `;
+    try {
+        const client = await pool.getConnection();
+        const res = await client.query(QUERY);
+        return res;
+    } catch (error) {
+        console.error(`ERROR: ${error}`);
+    }
+};
 
 export const deleteRecord = async (shift_id, user_id) => {
     const QUERY = `
@@ -93,6 +92,26 @@ export const deleteRecord = async (shift_id, user_id) => {
         } else {
             return res;
         }
+    } catch (error) {
+        console.error(`ERROR: ${error}`);
+        throw error;
+    }
+};
+
+
+export const getPriorityIdByShiftId = async (shift_id) => {
+    const QUERY = `
+        SELECT * FROM schedule_priority 
+        WHERE priority_id IN (
+            SELECT priority_id 
+            FROM shift 
+            WHERE shift_id = ${shift_id}
+        )
+    `;
+    try {
+        const client = await pool.getConnection();
+        const res = await client.query(QUERY);
+        return res;
     } catch (error) {
         console.error(`ERROR: ${error}`);
         throw error;

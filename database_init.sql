@@ -60,22 +60,14 @@ CREATE TABLE `day` (
   `day_id` int NOT NULL AUTO_INCREMENT,
   `week_id` int DEFAULT NULL,
   `day_num` int NOT NULL,
+  `month` int DEFAULT NULL,
   `status` enum('closed','pending') NOT NULL DEFAULT 'pending',
   PRIMARY KEY (`day_id`),
   KEY `week_id` (`week_id`),
-  CONSTRAINT `day_ibfk_1` FOREIGN KEY (`week_id`) REFERENCES `week` (`week_id`)
+  CONSTRAINT `day_ibfk_1` FOREIGN KEY (`week_id`) REFERENCES `week` (`week_id`),
+  CONSTRAINT `day_chk_1` CHECK (((`month` >= 1) and (`month` <= 12)))
 ) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `day`
---
-
-LOCK TABLES `day` WRITE;
-/*!40000 ALTER TABLE `day` DISABLE KEYS */;
-INSERT INTO `day` VALUES (1,34,4,'pending'),(2,34,5,'pending'),(3,34,6,'pending'),(4,34,7,'pending'),(5,34,8,'pending'),(6,34,9,'pending'),(7,34,10,'pending'),(8,35,11,'pending'),(9,35,12,'pending'),(10,35,13,'pending'),(11,35,14,'pending'),(12,35,15,'pending'),(13,35,16,'pending'),(14,35,17,'pending'),(15,36,18,'pending'),(16,36,19,'pending'),(17,36,20,'pending'),(18,36,21,'pending'),(19,36,22,'pending'),(20,36,23,'pending'),(21,36,24,'pending'),(22,37,25,'pending'),(23,37,26,'pending'),(24,37,27,'pending'),(25,37,28,'pending'),(26,37,29,'pending'),(27,37,30,'pending'),(28,37,31,'pending'),(29,38,1,'pending'),(30,38,2,'pending'),(31,38,3,'pending'),(32,38,4,'pending'),(33,38,5,'pending'),(34,38,6,'pending'),(35,38,7,'pending'),(36,39,8,'pending'),(37,39,9,'pending'),(38,39,10,'pending'),(39,39,11,'pending'),(40,39,12,'pending'),(41,39,13,'pending'),(42,39,14,'pending');
-/*!40000 ALTER TABLE `day` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `nurse`
@@ -239,6 +231,7 @@ CREATE TABLE `week` (
   `week_id` int NOT NULL AUTO_INCREMENT,
   `user_id` int NOT NULL,
   `priority_id` int NOT NULL,
+  `month` int DEFAULT NULL,
   `year` int NOT NULL,
   `week_start` date NOT NULL,
   `week_end` date NOT NULL,
@@ -247,19 +240,12 @@ CREATE TABLE `week` (
   KEY `user_id` (`user_id`),
   KEY `week_ibfk_2` (`priority_id`),
   CONSTRAINT `week_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`),
-  CONSTRAINT `week_ibfk_2` FOREIGN KEY (`priority_id`) REFERENCES `schedule_priority` (`priority_id`)
+  CONSTRAINT `week_ibfk_2` FOREIGN KEY (`priority_id`) REFERENCES `schedule_priority` (`priority_id`),
+  CONSTRAINT `week_chk_1` CHECK (((`month` >= 1) and (`month` <= 12)))
 ) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `week`
---
 
-LOCK TABLES `week` WRITE;
-/*!40000 ALTER TABLE `week` DISABLE KEYS */;
-INSERT INTO `week` VALUES (34,1,1,2024,'2024-08-04','2024-08-10','pending'),(35,1,1,2024,'2024-08-11','2024-08-17','pending'),(36,1,1,2024,'2024-08-12','2024-08-24','pending'),(37,1,1,2024,'2024-08-25','2024-08-31','pending'),(38,1,2,2024,'2024-09-01','2024-09-07','pending'),(39,1,2,2024,'2024-09-08','2024-09-14','pending');
-/*!40000 ALTER TABLE `week` ENABLE KEYS */;
-UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -270,4 +256,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-07-12 19:46:55
+-- Dump completed on 2024-07-12 20:35:55

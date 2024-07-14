@@ -4,7 +4,7 @@ import {
     getAllRequestsHandler,
     getRequestByShiftIdHandler,
     getRequestByRequestIdHandler,
-    // updateRequestHandler,
+    updateRequestHandler,
     deleteRequestHandler,
     getComputedShiftHandler
 } from '../handlers/index.js';
@@ -16,7 +16,7 @@ appRouter.get('/get-by-request/:shift_id/:user_id', getRequestByRequestIdHandler
 appRouter.get('/get-by-shift/:shift_id', getRequestByShiftIdHandler);
 appRouter.get('/get-computed-shift/:shift_id', getComputedShiftHandler)
 appRouter.post('/create', createRequestHandler);
-// appRouter.put('/update/:id', updateRequestHandler);
+appRouter.put('/update-request', updateRequestHandler)
 appRouter.delete('/delete/:shift_id/:user_id', deleteRequestHandler);
 
 
