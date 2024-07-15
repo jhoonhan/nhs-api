@@ -20,3 +20,8 @@ CREATE TABLE schedule_priority (
 	PRIMARY KEY (priority_id, user_id),
 	FOREIGN KEY (user_id) REFERENCES user (user_id)
 );
+
+
+SELECT * FROM request
+WHERE shift_id = 1
+ORDER BY priority DESC
