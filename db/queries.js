@@ -152,14 +152,17 @@ export const getComputedRequestByUserPriority = async (year, month) => {
             week.week_start,
             week.week_end, 
             request.*, 
-            schedule_priority.priority
+            schedule_priority.priority,
+            shift.min_staff,
+            shift.max_staff,
+            shift.optimal_staff
         FROM (SELECT * FROM week WHERE year = ${year} AND month = ${month}) AS week
         JOIN day ON week.week_id = day.week_id
         JOIN shift ON day.day_id = shift.day_id
         JOIN request ON shift.shift_id = request.shift_id
         JOIN schedule_priority
         ON request.user_id = schedule_priority.user_id AND shift.priority_id = schedule_priority.priority_id
-        ORDER BY request.priority_user DESC;
+        ORDER BY request.priority_user DESC, schedule_priority.priority ASC;
     `;
     try {
         const client = await pool.getConnection();
