@@ -26,16 +26,26 @@ export const getRequestById = async (shift_id, user_id) => {
     }
 };
 
-export const getRequestByShiftId = async (shift_id) => {
-    const TEMP_PRIORITY = `priority_user`
-    const QUERY2 = `SELECT * FROM request 
+export const getShiftById = async (shift_id) => {
+    const QUERY = `SELECT * FROM shift 
                           WHERE shift_id = ${shift_id}
-                          ORDER BY ${TEMP_PRIORITY} DESC
                           `;
+    try {
+        const client = await pool.getConnection();
+        const res = await client.query(QUERY);
+        return res[0];
+    } catch (error) {
+        console.error(`ERROR: ${error}`);
+        throw error;
+    }
+};
+
+
+export const getRequestByShiftId = async (shift_id) => {
     const QUERY = `
         SELECT shift.*, request.*, schedule_priority.priority
-        FROM (SELECT * FROM shift WHERE shift_id = 1) AS shift
-        JOIN (SELECT * FROM request WHERE shift_id = 1 ORDER BY priority_user DESC) AS request
+        FROM (SELECT * FROM shift WHERE shift_id = ${shift_id}) AS shift
+        JOIN (SELECT * FROM request WHERE shift_id = ${shift_id} ORDER BY priority_user DESC) AS request
         ON shift.shift_id = request.shift_id
         JOIN schedule_priority
         ON request.user_id = schedule_priority.user_id AND shift.priority_id = schedule_priority.priority_id
@@ -119,6 +129,37 @@ export const getPriorityIdByShiftId = async (shift_id) => {
             FROM shift 
             WHERE shift_id = ${shift_id}
         )
+    `;
+    try {
+        const client = await pool.getConnection();
+        const res = await client.query(QUERY);
+        return res;
+    } catch (error) {
+        console.error(`ERROR: ${error}`);
+        throw error;
+    }
+};
+
+export const getComputedRequestByUserPriority = async (year, month) => {
+    const QUERY = `
+        SELECT 
+            shift.shift_id, 
+            day.day_id,
+            day.day_num,
+            week.week_id, 
+            week.month, 
+            week.year,
+            week.week_start,
+            week.week_end, 
+            request.*, 
+            schedule_priority.priority
+        FROM (SELECT * FROM week WHERE year = ${year} AND month = ${month}) AS week
+        JOIN day ON week.week_id = day.week_id
+        JOIN shift ON day.day_id = shift.day_id
+        JOIN request ON shift.shift_id = request.shift_id
+        JOIN schedule_priority
+        ON request.user_id = schedule_priority.user_id AND shift.priority_id = schedule_priority.priority_id
+        ORDER BY request.priority_user DESC;
     `;
     try {
         const client = await pool.getConnection();

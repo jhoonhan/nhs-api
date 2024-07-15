@@ -3,27 +3,42 @@ import {
     getRequestById,
     createRequest,
     deleteRecord,
+    getShiftById,
     getRequestByShiftId,
-    getPriorityIdByShiftId
+    getPriorityIdByShiftId,
+    getComputedRequestByUserPriority,
 } from '../db/queries.js';
 
 
 export const computeShift = async (shift_id) => {
     try {
-        const requests = await getRequestByShiftId(shift_id);
-        if (requests.length === 0) {
-            return [];
-        }
+
+        let requests = []
+        const requestsThisMonth = await getComputedRequestByUserPriority(2024, 8);
+        requests = requestsThisMonth[0];
         console.log(requests);
-        const priority = await getPriorityIdByShiftId(shift_id);
-        // console.log(priority[0]);
 
-        // Shift computing algorithm
+        schedulingAlgorithm(requests);
 
-        return priority;
+        return requests;
     } catch (error) {
         console.error(error);
         throw error;
     }
 
+}
+
+const schedulingAlgorithm = (requests) => {
+    const conflicts = []
+
+    const groupedByShiftId = requests.reduce((acc, obj) => {
+        const key = obj['shift_id'];
+        if (!acc[key]) {
+            acc[key] = [];
+        }
+        acc[key].push(obj);
+        return acc;
+    }, {});
+
+    console.log(groupedByShiftId);
 }
