@@ -15,6 +15,8 @@ export const computeShift = async (shift_id) => {
         let requests = []
         const requestsThisMonth = await getComputedRequestByUserPriority(2024, 8);
         requests = requestsThisMonth[0];
+        const priorityList = await getPriorityIdByShiftId(shift_id);
+        console.log(priorityList);
 
         schedulingAlgorithm(requests);
 
@@ -57,9 +59,10 @@ const schedulingAlgorithm = (requests) => {
             shiftRequests[index] = null;
         })
 
-        console.log(shiftRequests);
-        console.log(filled);
-        console.log(conflict);
+        // console.log(shiftRequests);
+        // console.log(filled);
+        // console.log('conflicts:');
+        // console.log(conflict);
     });
 
 }
