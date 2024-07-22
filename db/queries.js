@@ -40,6 +40,50 @@ export const getShiftById = async (shift_id) => {
     }
 };
 
+export const getShiftByRange = async (shift_id_start, shift_id_start_end) => {
+    const QUERY = `SELECT * FROM shift 
+                          WHERE shift_id BETWEEN ${shift_id_start} AND ${shift_id_start_end}
+                          `;
+    try {
+        const client = await pool.getConnection();
+        const res = await client.query(QUERY);
+        return res[0];
+    } catch (error) {
+        console.error(`ERROR: ${error}`);
+        throw error;
+    }
+};
+
+export const getShiftByMonthYear = async (year, month) => {
+    const QUERY = `
+        SELECT 
+            shift.shift_id, 
+            day.day_id,
+            day.day_num,
+            week.week_id, 
+            week.month, 
+            week.year,
+            week.week_start,
+            week.week_end, 
+            shift.min_staff,
+            shift.max_staff,
+            shift.optimal_staff
+        FROM (SELECT * FROM week WHERE year = ${year} AND month = ${month}) AS week
+        JOIN day ON week.week_id = day.week_id
+        JOIN shift ON day.day_id = shift.day_id
+        ORDER BY shift.shift_id;
+    `;
+    try {
+        const client = await pool.getConnection();
+        const res = await client.query(QUERY);
+        return res[0];
+    } catch (error) {
+        console.error(`ERROR: ${error}`);
+        throw error;
+    }
+
+}
+
 
 export const getRequestByShiftId = async (shift_id) => {
     const QUERY = `
