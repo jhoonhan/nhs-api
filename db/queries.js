@@ -57,17 +57,14 @@ export const getShiftByRange = async (shift_id_start, shift_id_start_end) => {
 export const getShiftByMonthYear = async (year, month) => {
     const QUERY = `
         SELECT 
-            shift.shift_id, 
+            shift.*, 
             day.day_id,
             day.day_num,
             week.week_id, 
             week.month, 
             week.year,
             week.week_start,
-            week.week_end, 
-            shift.min_staff,
-            shift.max_staff,
-            shift.optimal_staff
+            week.week_end
         FROM (SELECT * FROM week WHERE year = ${year} AND month = ${month}) AS week
         JOIN day ON week.week_id = day.week_id
         JOIN shift ON day.day_id = shift.day_id

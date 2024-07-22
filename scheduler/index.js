@@ -25,7 +25,9 @@ export const computeShift = async (shift_id) => {
         const shiftObj = {}
         shiftData.forEach((shift) => {
             shiftObj[shift.shift_id] = shift;
+            shiftObj[shift.shift_id].staffs = [];
         });
+
 
         const priorityObj = {};
         priorityList[0].forEach((obj) => {
@@ -43,8 +45,6 @@ export const computeShift = async (shift_id) => {
 }
 
 const schedulingAlgorithm = async (requests, shiftObj, priorityObj) => {
-    const conflicts = []
-
     const groupedByShiftId = requests.reduce((acc, obj) => {
         const key = obj['shift_id'];
         if (!acc[key]) {
@@ -54,38 +54,64 @@ const schedulingAlgorithm = async (requests, shiftObj, priorityObj) => {
         return acc;
     }, {});
 
-    const month = {}
+    let conflictPriority = [];
+
+    // const shiftRequests = groupedByShiftId[2];
+    // conflictPriority = fromThirtyOne(shiftObj[2], shiftRequests, 6, conflictPriority);
+    //
+    //
+    // console.log(shiftObj[2]);
 
 
-    const shiftRequests = groupedByShiftId[2];
-    await fromThirtyOne(2, shiftRequests, 6);
+    for (let i = 1; i <= 6; i++) {
+        if (!groupedByShiftId[i]) continue;
+        const shiftRequests = groupedByShiftId[i];
+        fromThirtyOne(shiftObj[i], shiftRequests, 6, conflictPriority);
+
+        console.log(`Ran for shift ${i}`);
+        console.log(shiftObj[i].staffs);
+        console.log(`conflicts:`);
+        console.log(conflictPriority);
+        console.log(`-------------------`);
+    }
 
 
 }
 
-const fromThirtyOne = async (shift_id, shiftRequests, priorityLevel) => {
-    const shift = await getShiftById(shift_id);
-    const {is_day, approved_staff, charge_nurse, min_staff, max_staff, optimal_staff, status} = shift[0];
+const fromThirtyOne = (shift, shiftRequests, priorityLevel, conflictPriority) => {
+    const {is_day, charge_nurse, min_staff, max_staff, optimal_staff, status, staffs} = shift;
 
-    const filled = []
-    const conflicts = []
+    const conflictPriorityCopy = [...conflictPriority];
+    // Prioritize user with previous conflict
+    conflictPriority.forEach((user_id, index) => {
+        shiftRequests.forEach((request, index) => {
+            if (request.user_id === user_id && request.priority_user === priorityLevel) {
+                if (shift.approved_staff < min_staff) {
+                    approveRequest(shift, request);
+                    // remove from the conflict list
+                    conflictPriority.splice(index - 1, 1);
+                }
+            }
+        })
+    });
 
-    shiftRequests.forEach((request, index) => {
-        if (request.priority_user === priorityLevel) {
-            if (filled.length >= min_staff) {
-                conflicts.push(request);
+    shiftRequests.forEach((request) => {
+        if (request.priority_user === priorityLevel &&
+            !conflictPriorityCopy.includes(request.user_id)) {
+            if (shift.approved_staff >= min_staff) {
+                conflictPriority.push(request.user_id);
             } else {
                 if (request.status === 'pending') {
-                    filled.push(request);
-                    shiftRequests[index].status = 'approved';
+                    approveRequest(shift, request);
                 }
             }
         }
     })
 
-    // console.log('filled:');
-    // console.log(filled);
-    // console.log('conflicts:');
-    // console.log(conflicts);
-    return conflicts;
+}
+
+const approveRequest = (shift, request) => {
+    shift.staffs.push(request.user_id);
+    shift.approved_staff += 1;
+    request.status = 'approved';
 }
