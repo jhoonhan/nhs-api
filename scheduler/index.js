@@ -18,17 +18,20 @@ export const computeShift = async (shift_id) => {
         const requestsThisMonth = await getComputedRequestByUserPriority(2024, 8);
         requests = requestsThisMonth[0];
 
-        const priorityList = await getPriorityIdByShiftId(shift_id);
 
-
+        // Build shift object for local use
         const shiftData = await getShiftByMonthYear(2024, 8);
+
+
         const shiftObj = {}
         shiftData.forEach((shift) => {
             shiftObj[shift.shift_id] = shift;
             shiftObj[shift.shift_id].staffs = [];
         });
+        shiftObj.id_range = {start: shiftData[0].shift_id, end: shiftData[shiftData.length - 1].shift_id};
 
-
+        // Build the priority object for local use
+        const priorityList = await getPriorityIdByShiftId(shift_id);
         const priorityObj = {};
         priorityList[0].forEach((obj) => {
             priorityObj[obj.user_id] = obj.priority;
@@ -54,28 +57,31 @@ const schedulingAlgorithm = async (requests, shiftObj, priorityObj) => {
         return acc;
     }, {});
 
-    let conflictPriority = [];
 
-    // const shiftRequests = groupedByShiftId[2];
-    // conflictPriority = fromThirtyOne(shiftObj[2], shiftRequests, 6, conflictPriority);
-    //
-    //
-    // console.log(shiftObj[2]);
+    const shiftIdStart = +shiftObj.id_range.start;
+    const shiftIdEnd = +shiftObj.id_range.end;
 
 
-    for (let i = 1; i <= 6; i++) {
-        if (!groupedByShiftId[i]) continue;
-        const shiftRequests = groupedByShiftId[i];
-        fromThirtyOne(shiftObj[i], shiftRequests, 6, conflictPriority);
-
-        console.log(`Ran for shift ${i}`);
-        console.log(shiftObj[i].staffs);
-        console.log(`conflicts:`);
-        console.log(conflictPriority);
-        console.log(`-------------------`);
+    // Initialize the month
+    const roster = {};
+    for (let i = shiftIdStart; i <= shiftIdEnd; i++) {
+        roster[i] = false;
     }
 
+    // Populate each shift
+    let conflictPriority = [];
+    for (let i = 6; i > 0; i--) {
+        console.log(`priority level: ${i}`);
+        for (let j = shiftIdStart; j <= shiftIdEnd; j++) {
+            if (!groupedByShiftId[j]) continue;
+            const shiftRequests = groupedByShiftId[j];
+            const shift = shiftObj[j];
+            roster[j] = fromThirtyOne(shift, shiftRequests, i, conflictPriority);
+            console.log(`shift: ${j}: ${conflictPriority}, staffs: ${shift.staffs}`);
+        }
+    }
 
+    // console.log(roster);
 }
 
 const fromThirtyOne = (shift, shiftRequests, priorityLevel, conflictPriority) => {
@@ -85,7 +91,7 @@ const fromThirtyOne = (shift, shiftRequests, priorityLevel, conflictPriority) =>
     // Prioritize user with previous conflict
     conflictPriority.forEach((user_id, index) => {
         shiftRequests.forEach((request, index) => {
-            if (request.user_id === user_id && request.priority_user === priorityLevel) {
+            if (request.user_id === user_id && request.priority_user >= priorityLevel - 2) {
                 if (shift.approved_staff < min_staff) {
                     approveRequest(shift, request);
                     // remove from the conflict list
@@ -108,9 +114,13 @@ const fromThirtyOne = (shift, shiftRequests, priorityLevel, conflictPriority) =>
         }
     })
 
+    return shift.approved_staff >= min_staff;
 }
 
 const approveRequest = (shift, request) => {
+    if (shift.staffs.includes(request.user_id)) {
+        console.log('error!!!');
+    }
     shift.staffs.push(request.user_id);
     shift.approved_staff += 1;
     request.status = 'approved';
