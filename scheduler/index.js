@@ -67,7 +67,7 @@ const iterateRequests = (monthData, shift, shiftRequests, priorityLevel, conflic
     conflictPriority.forEach((user_id, index) => {
         shiftRequests.forEach((request, index) => {
             if (request.user_id === user_id &&
-                request.priority_user >= priorityLevel - 1 &&
+                request.priority_user === priorityLevel - 0 &&
                 request.status === 'pending'
             ) {
                 if (shift.approved_staff < min_staff) {
@@ -169,7 +169,7 @@ export const computeShift = async (shift_id) => {
         //     priorityObj[obj.user_id] = obj.priority;
         // });
 
-        const computedResult = schedulingAlgorithm(requests, shiftObj);
+        const computedResult = await schedulingAlgorithm(requests, shiftObj);
 
         return computedResult;
     } catch (error) {
