@@ -7,6 +7,7 @@ import {
   updateRequestHandler,
   deleteRequestHandler,
   getComputedShiftHandler,
+  getUserByIdHandler,
 } from "../handlers/index.js";
 
 const appRouter = express.Router();
@@ -16,6 +17,7 @@ appRouter.get(
   "/get-by-request/:shift_id/:user_id",
   getRequestByRequestIdHandler,
 );
+appRouter.get("/get-user/:user_id", getUserByIdHandler);
 appRouter.get("/get-by-shift/:shift_id", getRequestByShiftIdHandler);
 appRouter.get("/get-computed-shift/:month/:year", getComputedShiftHandler);
 appRouter.post("/create", createRequestHandler);

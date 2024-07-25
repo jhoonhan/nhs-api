@@ -214,3 +214,29 @@ export const getComputedRequestByMonthYear = async (month, year) => {
     throw error;
   }
 };
+
+export const getUserById = async (user_id) => {
+  const QUERY = `SELECT * FROM user WHERE user_id = ${user_id}`;
+  try {
+    const client = await pool.getConnection();
+    const res = await client.query(QUERY);
+    return res;
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+    throw error;
+  }
+};
+
+export const getUserByList = async (user_id_list) => {
+  const QUERY = `SELECT * FROM user WHERE user_id IN (${user_id_list.join(
+    ",",
+  )})`;
+  try {
+    const client = await pool.getConnection();
+    const res = await client.query(QUERY);
+    return res;
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+    throw error;
+  }
+};

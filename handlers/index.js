@@ -5,6 +5,7 @@ import {
   updateRequest,
   deleteRecord,
   getRequestByShiftId,
+  getUserById,
 } from "../db/queries.js";
 
 import { computeShift } from "../scheduler/index.js";
@@ -98,6 +99,17 @@ export const getComputedShiftHandler = async (req, res) => {
     const computedShift = await computeShift(month, year);
 
     return res.status(200).json({ status: "success", data: computedShift });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ status: "fail", message: error.message });
+  }
+};
+
+export const getUserByIdHandler = async (req, res) => {
+  try {
+    const userId = req.params.user_id;
+    const user = await getUserById(userId);
+    return res.status(200).json({ status: "success", data: user });
   } catch (error) {
     console.error(error);
     res.status(500).json({ status: "fail", message: error.message });
