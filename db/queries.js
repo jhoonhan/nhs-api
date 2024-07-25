@@ -1,61 +1,61 @@
-import {pool} from './index.js';
+import { pool } from "./index.js";
 
 export const getAllRequest = async () => {
-    const QUERY = 'SELECT * FROM request';
-    try {
-        const client = await pool.getConnection();
-        const res = await client.query(QUERY);
-        return res[0];
-    } catch (error) {
-        console.error(`ERROR: ${error}`);
-    }
+  const QUERY = "SELECT * FROM request";
+  try {
+    const client = await pool.getConnection();
+    const res = await client.query(QUERY);
+    return res[0];
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+  }
 };
 
 export const getRequestById = async (shift_id, user_id) => {
-    const QUERY = `SELECT * FROM request 
+  const QUERY = `SELECT * FROM request 
                           WHERE shift_id = ${shift_id}
                             AND user_id = ${user_id}
                           `;
-    try {
-        const client = await pool.getConnection();
-        const res = await client.query(QUERY);
-        return res[0];
-    } catch (error) {
-        console.error(`ERROR: ${error}`);
-        throw error;
-    }
+  try {
+    const client = await pool.getConnection();
+    const res = await client.query(QUERY);
+    return res[0];
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+    throw error;
+  }
 };
 
 export const getShiftById = async (shift_id) => {
-    const QUERY = `SELECT * FROM shift 
+  const QUERY = `SELECT * FROM shift 
                           WHERE shift_id = ${shift_id}
                           `;
-    try {
-        const client = await pool.getConnection();
-        const res = await client.query(QUERY);
-        return res[0];
-    } catch (error) {
-        console.error(`ERROR: ${error}`);
-        throw error;
-    }
+  try {
+    const client = await pool.getConnection();
+    const res = await client.query(QUERY);
+    return res[0];
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+    throw error;
+  }
 };
 
 export const getShiftByRange = async (shift_id_start, shift_id_start_end) => {
-    const QUERY = `SELECT * FROM shift 
+  const QUERY = `SELECT * FROM shift 
                           WHERE shift_id BETWEEN ${shift_id_start} AND ${shift_id_start_end}
                           `;
-    try {
-        const client = await pool.getConnection();
-        const res = await client.query(QUERY);
-        return res[0];
-    } catch (error) {
-        console.error(`ERROR: ${error}`);
-        throw error;
-    }
+  try {
+    const client = await pool.getConnection();
+    const res = await client.query(QUERY);
+    return res[0];
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+    throw error;
+  }
 };
 
-export const getShiftByMonthYear = async (year, month) => {
-    const QUERY = `
+export const getShiftByMonthYear = async (month, year) => {
+  const QUERY = `
         SELECT 
             shift.*, 
             day.day_id,
@@ -70,20 +70,18 @@ export const getShiftByMonthYear = async (year, month) => {
         JOIN shift ON day.day_id = shift.day_id
         ORDER BY shift.shift_id;
     `;
-    try {
-        const client = await pool.getConnection();
-        const res = await client.query(QUERY);
-        return res[0];
-    } catch (error) {
-        console.error(`ERROR: ${error}`);
-        throw error;
-    }
-
-}
-
+  try {
+    const client = await pool.getConnection();
+    const res = await client.query(QUERY);
+    return res[0];
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+    throw error;
+  }
+};
 
 export const getRequestByShiftId = async (shift_id) => {
-    const QUERY = `
+  const QUERY = `
         SELECT shift.*, request.*, schedule_priority.priority
         FROM (SELECT * FROM shift WHERE shift_id = ${shift_id}) AS shift
         JOIN (SELECT * FROM request WHERE shift_id = ${shift_id} ORDER BY priority_user DESC) AS request
@@ -93,19 +91,23 @@ export const getRequestByShiftId = async (shift_id) => {
         ORDER BY request.priority_user DESC;
     `;
 
-
-    try {
-        const client = await pool.getConnection();
-        const res = await client.query(QUERY);
-        return res[0];
-    } catch (error) {
-        console.error(`ERROR: ${error}`);
-        throw error;
-    }
+  try {
+    const client = await pool.getConnection();
+    const res = await client.query(QUERY);
+    return res[0];
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+    throw error;
+  }
 };
 
-export const createRequest = async (shift_id, user_id, priority_user, p_computed) => {
-    const QUERY = `INSERT INTO request 
+export const createRequest = async (
+  shift_id,
+  user_id,
+  priority_user,
+  p_computed,
+) => {
+  const QUERY = `INSERT INTO request 
                 (shift_id, user_id, priority_user, priority_computed) 
                 VALUES (
                     ${shift_id}, 
@@ -113,57 +115,55 @@ export const createRequest = async (shift_id, user_id, priority_user, p_computed
                     ${priority_user},
                     ${p_computed}
                 )`;
-    try {
-        const client = await pool.getConnection();
-        const res = await client.query(QUERY);
-        return res;
-    } catch (error) {
-        console.error(`ERROR: ${error}`);
-        throw error;
-    }
+  try {
+    const client = await pool.getConnection();
+    const res = await client.query(QUERY);
+    return res;
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+    throw error;
+  }
 };
 
-
 export const updateRequest = async (shift_id, user_id, status) => {
-    const QUERY = `
+  const QUERY = `
                 UPDATE request
                 SET
                     status = '${status}'
                 WHERE id = ${shift_id} AND user_id = ${user_id}
                 `;
-    try {
-        const client = await pool.getConnection();
-        const res = await client.query(QUERY);
-        return res;
-    } catch (error) {
-        console.error(`ERROR: ${error}`);
-    }
+  try {
+    const client = await pool.getConnection();
+    const res = await client.query(QUERY);
+    return res;
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+  }
 };
 
 export const deleteRecord = async (shift_id, user_id) => {
-    const QUERY = `
+  const QUERY = `
                   DELETE FROM request
                   WHERE shift_id = ${shift_id}
                     AND user_id = ${user_id}
                   `;
-    try {
-        const client = await pool.getConnection();
-        const res = await client.query(QUERY);
+  try {
+    const client = await pool.getConnection();
+    const res = await client.query(QUERY);
 
-        if (!res[0].affectedRows) {
-            throw new Error('Record not found');
-        } else {
-            return res;
-        }
-    } catch (error) {
-        console.error(`ERROR: ${error}`);
-        throw error;
+    if (!res[0].affectedRows) {
+      throw new Error("Record not found");
+    } else {
+      return res;
     }
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+    throw error;
+  }
 };
 
-
 export const getPriorityIdByShiftId = async (shift_id) => {
-    const QUERY = `
+  const QUERY = `
         SELECT * FROM schedule_priority 
         WHERE priority_id IN (
             SELECT priority_id 
@@ -171,18 +171,18 @@ export const getPriorityIdByShiftId = async (shift_id) => {
             WHERE shift_id = ${shift_id}
         )
     `;
-    try {
-        const client = await pool.getConnection();
-        const res = await client.query(QUERY);
-        return res;
-    } catch (error) {
-        console.error(`ERROR: ${error}`);
-        throw error;
-    }
+  try {
+    const client = await pool.getConnection();
+    const res = await client.query(QUERY);
+    return res;
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+    throw error;
+  }
 };
 
-export const getComputedRequestByUserPriority = async (year, month) => {
-    const QUERY = `
+export const getComputedRequestByMonthYear = async (month, year) => {
+  const QUERY = `
         SELECT 
             shift.shift_id, 
             day.day_id,
@@ -205,12 +205,12 @@ export const getComputedRequestByUserPriority = async (year, month) => {
         ON request.user_id = schedule_priority.user_id AND shift.priority_id = schedule_priority.priority_id
         ORDER BY request.priority_user DESC, schedule_priority.priority ASC;
     `;
-    try {
-        const client = await pool.getConnection();
-        const res = await client.query(QUERY);
-        return res;
-    } catch (error) {
-        console.error(`ERROR: ${error}`);
-        throw error;
-    }
+  try {
+    const client = await pool.getConnection();
+    const res = await client.query(QUERY);
+    return res;
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+    throw error;
+  }
 };

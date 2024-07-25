@@ -37,7 +37,7 @@ export const getRequestByRequestIdHandler = async (req, res) => {
 export const getRequestByShiftIdHandler = async (req, res) => {
   try {
     const shiftId = req.params.shift_id;
-    const request = await getRequestByShiftId(shiftId, userId);
+    const request = await getRequestByShiftId(shiftId);
     return res.status(200).json(request);
   } catch (error) {
     console.error(error);
@@ -93,8 +93,9 @@ export const deleteRequestHandler = async (req, res) => {
 
 export const getComputedShiftHandler = async (req, res) => {
   try {
-    const shift_id = req.params.shift_id;
-    const computedShift = await computeShift(shift_id);
+    const month = req.params.month;
+    const year = req.params.year;
+    const computedShift = await computeShift(month, year);
 
     return res.status(200).json({ status: "success", data: computedShift });
   } catch (error) {
