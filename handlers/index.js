@@ -6,6 +6,7 @@ import {
   deleteRecord,
   getRequestByShiftId,
   getUserById,
+  getAllUser,
 } from "../db/queries.js";
 
 import { computeShift } from "../scheduler/index.js";
@@ -105,6 +106,16 @@ export const getComputedShiftHandler = async (req, res) => {
   }
 };
 
+// USERS
+export const getAllUserHandler = async (req, res) => {
+  try {
+    const requests = await getAllUser();
+    return res.status(200).json({ status: "success", data: requests });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ status: "fail", message: "Server Error" });
+  }
+};
 export const getUserByIdHandler = async (req, res) => {
   try {
     const userId = req.params.user_id;

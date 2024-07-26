@@ -215,6 +215,16 @@ export const getComputedRequestByMonthYear = async (month, year) => {
   }
 };
 
+export const getAllUser = async () => {
+  const QUERY = "SELECT * FROM user JOIN nurse ON user.user_id = nurse.user_id";
+  try {
+    const client = await pool.getConnection();
+    const res = await client.query(QUERY);
+    return res[0];
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+  }
+};
 export const getUserById = async (user_id) => {
   const QUERY = `SELECT * FROM user WHERE user_id = ${user_id}`;
   try {
