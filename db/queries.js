@@ -130,7 +130,7 @@ export const updateRequest = async (shift_id, user_id, status) => {
                 UPDATE request
                 SET
                     status = '${status}'
-                WHERE id = ${shift_id} AND user_id = ${user_id}
+                WHERE shift_id = ${shift_id} AND user_id = ${user_id}
                 `;
   try {
     const client = await pool.getConnection();
