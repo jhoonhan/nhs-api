@@ -1,10 +1,13 @@
 import { pool } from "./index.js";
 
+let connection;
+
 export const getAllRequest = async () => {
   const QUERY = "SELECT * FROM request";
   try {
-    const client = await pool.getConnection();
-    const res = await client.query(QUERY);
+    if (!connection) connection = await pool.getConnection();
+
+    const res = await connection.query(QUERY);
     return res[0];
   } catch (error) {
     console.error(`ERROR: ${error}`);
@@ -17,8 +20,9 @@ export const getRequestById = async (shift_id, user_id) => {
                             AND user_id = ${user_id}
                           `;
   try {
-    const client = await pool.getConnection();
-    const res = await client.query(QUERY);
+    if (!connection) connection = await pool.getConnection();
+
+    const res = await connection.query(QUERY);
     return res[0];
   } catch (error) {
     console.error(`ERROR: ${error}`);
@@ -31,8 +35,8 @@ export const getShiftById = async (shift_id) => {
                           WHERE shift_id = ${shift_id}
                           `;
   try {
-    const client = await pool.getConnection();
-    const res = await client.query(QUERY);
+    if (!connection) connection = await pool.getConnection();
+    const res = await connection.query(QUERY);
     return res[0];
   } catch (error) {
     console.error(`ERROR: ${error}`);
@@ -45,8 +49,8 @@ export const getShiftByRange = async (shift_id_start, shift_id_start_end) => {
                           WHERE shift_id BETWEEN ${shift_id_start} AND ${shift_id_start_end}
                           `;
   try {
-    const client = await pool.getConnection();
-    const res = await client.query(QUERY);
+    if (!connection) connection = await pool.getConnection();
+    const res = await connection.query(QUERY);
     return res[0];
   } catch (error) {
     console.error(`ERROR: ${error}`);
@@ -71,8 +75,8 @@ export const getShiftByMonthYear = async (month, year) => {
         ORDER BY shift.shift_id;
     `;
   try {
-    const client = await pool.getConnection();
-    const res = await client.query(QUERY);
+    if (!connection) connection = await pool.getConnection();
+    const res = await connection.query(QUERY);
     return res[0];
   } catch (error) {
     console.error(`ERROR: ${error}`);
@@ -92,8 +96,8 @@ export const getRequestByShiftId = async (shift_id) => {
     `;
 
   try {
-    const client = await pool.getConnection();
-    const res = await client.query(QUERY);
+    if (!connection) connection = await pool.getConnection();
+    const res = await connection.query(QUERY);
     return res[0];
   } catch (error) {
     console.error(`ERROR: ${error}`);
@@ -116,8 +120,8 @@ export const createRequest = async (
                     ${p_computed}
                 )`;
   try {
-    const client = await pool.getConnection();
-    const res = await client.query(QUERY);
+    if (!connection) connection = await pool.getConnection();
+    const res = await connection.query(QUERY);
     return res;
   } catch (error) {
     console.error(`ERROR: ${error}`);
@@ -133,11 +137,39 @@ export const updateRequest = async (shift_id, user_id, status) => {
                 WHERE shift_id = ${shift_id} AND user_id = ${user_id}
                 `;
   try {
-    const client = await pool.getConnection();
-    const res = await client.query(QUERY);
+    if (!connection) connection = await pool.getConnection();
+    const res = await connection.query(QUERY);
     return res;
   } catch (error) {
     console.error(`ERROR: ${error}`);
+    throw error;
+  }
+};
+
+export const updateRequestByList = async (requests) => {
+  const caseStatements = requests
+    .map(
+      ({ shift_id, user_id }) =>
+        `WHEN shift_id = ${shift_id} AND user_id = ${user_id} THEN 'approved'`,
+    )
+    .join(" ");
+  const QUERY = `
+    UPDATE request
+    SET status = CASE
+      ${caseStatements}
+      ELSE status
+    END
+    WHERE (shift_id, user_id) IN (${requests
+      .map(({ shift_id, user_id }) => `(${shift_id}, ${user_id})`)
+      .join(", ")})
+  `;
+  try {
+    if (!connection) connection = await pool.getConnection();
+    const res = await connection.query(QUERY);
+    return res[0];
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+    throw error;
   }
 };
 
@@ -148,8 +180,8 @@ export const deleteRecord = async (shift_id, user_id) => {
                     AND user_id = ${user_id}
                   `;
   try {
-    const client = await pool.getConnection();
-    const res = await client.query(QUERY);
+    if (!connection) connection = await pool.getConnection();
+    const res = await connection.query(QUERY);
 
     if (!res[0].affectedRows) {
       throw new Error("Record not found");
@@ -172,8 +204,9 @@ export const getPriorityIdByShiftId = async (shift_id) => {
         )
     `;
   try {
-    const client = await pool.getConnection();
-    const res = await client.query(QUERY);
+    if (!connection) connection = await pool.getConnection();
+
+    const res = await connection.query(QUERY);
     return res;
   } catch (error) {
     console.error(`ERROR: ${error}`);
@@ -206,8 +239,9 @@ export const getComputedRequestByMonthYear = async (month, year) => {
         ORDER BY request.priority_user DESC, schedule_priority.priority ASC;
     `;
   try {
-    const client = await pool.getConnection();
-    const res = await client.query(QUERY);
+    if (!connection) connection = await pool.getConnection();
+
+    const res = await connection.query(QUERY);
     return res;
   } catch (error) {
     console.error(`ERROR: ${error}`);
@@ -218,18 +252,21 @@ export const getComputedRequestByMonthYear = async (month, year) => {
 export const getAllUser = async () => {
   const QUERY = "SELECT * FROM user JOIN nurse ON user.user_id = nurse.user_id";
   try {
-    const client = await pool.getConnection();
-    const res = await client.query(QUERY);
+    if (!connection) connection = await pool.getConnection();
+
+    const res = await connection.query(QUERY);
     return res[0];
   } catch (error) {
     console.error(`ERROR: ${error}`);
+    throw error;
   }
 };
 export const getUserById = async (user_id) => {
   const QUERY = `SELECT * FROM user WHERE user_id = ${user_id}`;
   try {
-    const client = await pool.getConnection();
-    const res = await client.query(QUERY);
+    if (!connection) connection = await pool.getConnection();
+
+    const res = await connection.query(QUERY);
     return res;
   } catch (error) {
     console.error(`ERROR: ${error}`);
@@ -242,9 +279,26 @@ export const getUserByList = async (user_id_list) => {
     ",",
   )})`;
   try {
-    const client = await pool.getConnection();
-    const res = await client.query(QUERY);
+    if (!connection) connection = await pool.getConnection();
+
+    const res = await connection.query(QUERY);
     return res;
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+    throw error;
+  }
+};
+
+export const resetRequest = async () => {
+  const QUERY = `
+        UPDATE request
+        SET status = "pending"
+        `;
+  try {
+    if (!connection) connection = await pool.getConnection();
+
+    const res = await connection.query(QUERY);
+    return res[0];
   } catch (error) {
     console.error(`ERROR: ${error}`);
     throw error;

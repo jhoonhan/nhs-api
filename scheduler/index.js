@@ -11,6 +11,8 @@ import {
   getComputedRequestByMonthYear,
   getUserById,
   getUserByList,
+  updateRequestByList,
+  resetRequest,
 } from "../db/queries.js";
 
 let efficiency = 0;
@@ -35,128 +37,6 @@ const initWeeks = (weekIdStart, weekIdEnd) => {
   return data;
 };
 
-const approveRequest = async ({ weeks, roster }, shift, request) => {
-  try {
-    const approvedStaffs = roster[shift.shift_id].approvedStaffs;
-    // Validation
-    if (approvedStaffs.includes(request.user_id)) {
-      console.error("Duplicate staff in shift");
-      return;
-    }
-
-    if ((!shift.week_id) in weeks) {
-      throw new Error("Week not found");
-    }
-    const currentWeek = weeks[shift.week_id];
-    const count = currentWeek.filter((x) => x === request.user_id).length;
-
-    if (count >= 3) {
-      console.error("Staff max/week already reached");
-      return;
-    }
-
-    currentWeek.push(request.user_id);
-    approvedStaffs.push(request.user_id);
-    shift.approved_staff += 1;
-    request.status = "approved";
-  } catch (error) {
-    console.error(error);
-    throw error;
-  }
-};
-
-const computeConflicts = (
-  conflictPriority,
-  shiftRequests,
-  priorityLevel,
-  shift,
-  monthData,
-  involvedUsers,
-) => {
-  conflictPriority.forEach((user_id, index) => {
-    shiftRequests.forEach((request, index) => {
-      if (
-        request.user_id === user_id &&
-        request.priority_user === priorityLevel - 0 &&
-        request.status === "pending"
-      ) {
-        if (shift.approved_staff < shift.min_staff) {
-          approveRequest(monthData, shift, request);
-          // add user to involved users
-          involvedUsers.push(request.user_id);
-          // remove from the conflict list
-          conflictPriority.splice(index - 1, 1);
-          efficiency -= request.priority_user;
-        }
-      }
-    });
-  });
-};
-const computeRequests = (
-  conflictPriority,
-  conflictPriorityCopy,
-  shiftRequests,
-  priorityLevel,
-  shift,
-  monthData,
-  involvedUsers,
-) => {
-  shiftRequests.forEach((request) => {
-    if (
-      request.priority_user === priorityLevel &&
-      !conflictPriorityCopy.includes(request.user_id) &&
-      request.status === "pending"
-    ) {
-      if (shift.approved_staff >= shift.min_staff) {
-        conflictPriority.push(request.user_id);
-        efficiency += priorityLevel;
-      } else {
-        approveRequest(monthData, shift, request);
-        involvedUsers.push(request.user_id);
-      }
-    }
-  });
-};
-
-const iterateRequests = (
-  monthData,
-  shift,
-  shiftRequests,
-  priorityLevel,
-  conflictPriority,
-  involvedUsers,
-) => {
-  const { is_day, charge_nurse, min_staff, max_staff, optimal_staff, status } =
-    shift;
-
-  // Prioritize user with previous conflict
-  computeConflicts(
-    conflictPriority,
-    shiftRequests,
-    priorityLevel,
-    shift,
-    monthData,
-    involvedUsers,
-  );
-
-  computeRequests(
-    conflictPriority,
-    [...conflictPriority],
-    shiftRequests,
-    priorityLevel,
-    shift,
-    monthData,
-    involvedUsers,
-  );
-
-  const result = {
-    ...monthData.roster[shift.shift_id],
-    status: shift.approved_staff >= min_staff ? "closed" : "open",
-  };
-
-  return result;
-};
-
 const getInvolvedUserObjData = async (involvedUsers) => {
   try {
     const userObj = {};
@@ -173,6 +53,143 @@ const getInvolvedUserObjData = async (involvedUsers) => {
   }
 };
 
+const approveRequest = ({ weeks, roster }, shift, request, approveList) => {
+  const approvedStaffs = roster[shift.shift_id].approvedStaffs;
+  // Validation
+  if (approvedStaffs.includes(request.user_id)) {
+    console.error("Duplicate staff in shift");
+    return;
+  }
+
+  if ((!shift.week_id) in weeks) {
+    throw new Error("Week not found");
+  }
+  const currentWeek = weeks[shift.week_id];
+  const count = currentWeek.filter((x) => x === request.user_id).length;
+
+  if (count >= 3) {
+    console.error("Staff max/week already reached");
+    return;
+  }
+
+  currentWeek.push(request.user_id);
+  approvedStaffs.push(request.user_id);
+  shift.approved_staff += 1;
+  request.status = "approved";
+  approveList.push({ shift_id: shift.shift_id, user_id: request.user_id });
+};
+
+const computeConflicts = ({
+  conflictPriority,
+  shiftRequests,
+  priorityLevel,
+  shift,
+  monthData,
+  involvedUsers,
+  approveList,
+}) => {
+  conflictPriority.forEach((user_id) => {
+    shiftRequests.forEach((request, index) => {
+      if (
+        request.user_id === user_id &&
+        request.priority_user === priorityLevel - 0 &&
+        request.status === "pending"
+      ) {
+        if (shift.approved_staff < shift.min_staff) {
+          approveRequest(monthData, shift, request, approveList);
+          // add user to involved users
+          involvedUsers.push(request.user_id);
+          // remove from the conflict list
+          conflictPriority.splice(index - 1, 1);
+          efficiency -= request.priority_user;
+        }
+      }
+    });
+  });
+};
+const computeRequests = ({
+  conflictPriority,
+  conflictPriorityCopy,
+  shiftRequests,
+  priorityLevel,
+  shift,
+  monthData,
+  involvedUsers,
+  approveList,
+}) => {
+  shiftRequests.forEach((request) => {
+    if (
+      request.priority_user === priorityLevel &&
+      !conflictPriorityCopy.includes(request.user_id) &&
+      request.status === "pending"
+    ) {
+      if (shift.approved_staff >= shift.min_staff) {
+        conflictPriority.push(request.user_id);
+        efficiency += priorityLevel;
+      } else {
+        approveRequest(monthData, shift, request, approveList);
+        involvedUsers.push(request.user_id);
+      }
+    }
+  });
+};
+
+const iterateRequests = (
+  monthData,
+  shift,
+  shiftRequests,
+  priorityLevel,
+  conflictPriority,
+  involvedUsers,
+  approveList,
+) => {
+  const computeData = {
+    conflictPriority,
+    conflictPriorityCopy: [...conflictPriority],
+    shiftRequests,
+    priorityLevel,
+    shift,
+    monthData,
+    involvedUsers,
+    approveList,
+  };
+  // Prioritize user with previous conflict
+  computeConflicts(computeData);
+  computeRequests(computeData);
+
+  const result = {
+    ...monthData.roster[shift.shift_id],
+    status: shift.approved_staff >= shift.min_staff ? "closed" : "open",
+  };
+
+  return result;
+};
+
+const formatResultData = (monthData, shiftObj) => {
+  const allRequests = [];
+  const openRequests = [];
+  const closedRequests = [];
+
+  Object.keys(monthData.roster).forEach((shift_id) => {
+    allRequests.push({ ...shiftObj[shift_id], ...monthData.roster[shift_id] });
+    if (monthData.roster[shift_id].status === "open") {
+      openRequests.push({
+        ...shiftObj[shift_id],
+        ...monthData.roster[shift_id],
+      });
+    } else {
+      closedRequests.push({
+        ...shiftObj[shift_id],
+        ...monthData.roster[shift_id],
+      });
+    }
+  });
+  return {
+    allRequests: allRequests,
+    open: openRequests,
+    closed: closedRequests,
+  };
+};
 const schedulingAlgorithm = async (requests, shiftObj) => {
   const groupedByShiftId = requests.reduce((acc, obj) => {
     const key = obj["shift_id"];
@@ -185,6 +202,7 @@ const schedulingAlgorithm = async (requests, shiftObj) => {
 
   const conflictPriority = [];
   const involvedUsers = [];
+  const approveList = [];
 
   const shiftIdStart = +shiftObj.id_range.start;
   const shiftIdEnd = +shiftObj.id_range.end;
@@ -211,49 +229,33 @@ const schedulingAlgorithm = async (requests, shiftObj) => {
         priorityLevel,
         conflictPriority,
         involvedUsers,
+        approveList,
       );
       // console.log(`shift: ${j}: ${conflictPriority}, staffs: ${shift.staffs}`);
     }
   }
 
   console.log(`Efficiency: ${efficiency}`);
-  const allRequests = [];
-  const openRequests = [];
-  const closedRequests = [];
-
-  Object.keys(monthData.roster).forEach((shift_id) => {
-    allRequests.push({ ...shiftObj[shift_id], ...monthData.roster[shift_id] });
-    if (monthData.roster[shift_id].status === "open") {
-      openRequests.push({
-        ...shiftObj[shift_id],
-        ...monthData.roster[shift_id],
-      });
-    } else {
-      closedRequests.push({
-        ...shiftObj[shift_id],
-        ...monthData.roster[shift_id],
-      });
-    }
-  });
 
   return {
-    allRequests: allRequests,
-    open: openRequests,
-    closed: closedRequests,
+    ...formatResultData(monthData, shiftObj),
     conflicts: conflictPriority,
     involvedUsers: await getInvolvedUserObjData(involvedUsers),
+    approveList,
   };
 };
 
-export const computeShift = async (month, year) => {
+export const computeRoster = async (month, year) => {
   try {
     // Build request array for local use
-    let requests = [];
     const requestsThisMonth = await getComputedRequestByMonthYear(month, year);
-    requests = requestsThisMonth[0];
+    const requests = requestsThisMonth[0];
+    console.log("start:");
+    console.log("0");
 
     // Build shift object for local use
     const shiftData = await getShiftByMonthYear(month, year);
+    console.log("1");
     const shiftObj = {};
     shiftData.forEach((shift) => {
       shiftObj[shift.shift_id] = shift;
@@ -266,8 +268,14 @@ export const computeShift = async (month, year) => {
       start: shiftData[0].week_id,
       end: shiftData[shiftData.length - 1].week_id,
     };
+    console.log("2");
+
+    // Resets request to pending
+    // await resetRequest();
+    // efficiency = 0;
 
     const computedResult = await schedulingAlgorithm(requests, shiftObj);
+    // await updateRequestByList(computedResult.approveList);
 
     return computedResult;
   } catch (error) {

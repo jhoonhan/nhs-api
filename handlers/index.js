@@ -9,7 +9,7 @@ import {
   getAllUser,
 } from "../db/queries.js";
 
-import { computeShift } from "../scheduler/index.js";
+import { computeRoster } from "../scheduler/index.js";
 import { pool } from "../db/index.js";
 
 const PRIORITY_COMPUTED = 0;
@@ -97,7 +97,7 @@ export const getComputedShiftHandler = async (req, res) => {
   try {
     const month = req.params.month;
     const year = req.params.year;
-    const computedShift = await computeShift(month, year);
+    const computedShift = await computeRoster(month, year);
 
     return res.status(200).json({ status: "success", data: computedShift });
   } catch (error) {
