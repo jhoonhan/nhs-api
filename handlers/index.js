@@ -7,6 +7,8 @@ import {
   getRequestByShiftId,
   getUserById,
   getAllUser,
+  getRequestsByMonthYear,
+  updateShift,
 } from "../db/queries.js";
 
 import { computeRoster } from "../scheduler/index.js";
@@ -93,11 +95,25 @@ export const deleteRequestHandler = async (req, res) => {
   }
 };
 
-export const getComputedShiftHandler = async (req, res) => {
+export const getRequestsByMonthYearHandler = async (req, res) => {
   try {
     const month = req.params.month;
     const year = req.params.year;
-    const computedShift = await computeRoster(month, year);
+    const data = await getRequestsByMonthYear(month, year);
+
+    return res.status(200).json({ status: "success", data });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ status: "fail", message: error.message });
+  }
+};
+
+export const getComputedRosterHandler = async (req, res) => {
+  try {
+    const month = req.params.month;
+    const year = req.params.year;
+    const compute = +req.params.compute;
+    const computedShift = await computeRoster(month, year, compute);
 
     return res.status(200).json({ status: "success", data: computedShift });
   } catch (error) {
@@ -124,5 +140,19 @@ export const getUserByIdHandler = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ status: "fail", message: error.message });
+  }
+};
+
+// SHIFTS
+export const updateShiftHandler = async (req, res) => {
+  const { shift_id, data } = req.body;
+
+  try {
+    const request = await updateShift(shift_id, data);
+
+    return res.status(201).json({ request });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
   }
 };

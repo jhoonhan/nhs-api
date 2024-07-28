@@ -8,11 +8,12 @@ import {
   getShiftById,
   getRequestByShiftId,
   getPriorityIdByShiftId,
-  getComputedRequestByMonthYear,
+  getRequestsByMonthYear,
   getUserById,
   getUserByList,
   approveRequestByList,
   resetRequest,
+  updateShift,
 } from "../db/queries.js";
 
 let efficiency = 0;
@@ -134,6 +135,20 @@ const computeRequests = ({
   });
 };
 
+const approveShiftStatus = async (shift) => {
+  try {
+    if (shift.approved_staff >= shift.min_staff) {
+      await updateShift(shift.shift_id, { status: "closed" });
+      return "closed";
+    } else {
+      return "open";
+    }
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
 const iterateRequests = (
   monthData,
   shift,
@@ -157,12 +172,10 @@ const iterateRequests = (
   computeConflicts(computeData);
   computeRequests(computeData);
 
-  const result = {
+  return {
     ...monthData.roster[shift.shift_id],
-    status: shift.approved_staff >= shift.min_staff ? "closed" : "open",
+    status: approveShiftStatus(shift),
   };
-
-  return result;
 };
 
 const formatResultData = (monthData, shiftObj) => {
@@ -190,7 +203,36 @@ const formatResultData = (monthData, shiftObj) => {
     closed: closedRequests,
   };
 };
-const schedulingAlgorithm = async (requests, shiftObj) => {
+const formatShiftData = (shiftData) => {
+  const shiftObj = {};
+  shiftData.forEach((shift) => {
+    shiftObj[shift.shift_id] = shift;
+  });
+  shiftObj.id_range = {
+    start: shiftData[0].shift_id,
+    end: shiftData[shiftData.length - 1].shift_id,
+  };
+  shiftObj.week_range = {
+    start: shiftData[0].week_id,
+    end: shiftData[shiftData.length - 1].week_id,
+  };
+  return shiftObj;
+};
+
+const formatMonthData = (shiftObj) => {
+  const shiftIdStart = +shiftObj.id_range.start;
+  const shiftIdEnd = +shiftObj.id_range.end;
+  const weekIdStart = +shiftObj.week_range.start;
+  const weekIdEnd = +shiftObj.week_range.end;
+  // Initialize the roster
+  return {
+    roster: initRoster(shiftIdStart, shiftIdEnd),
+    weeks: initWeeks(weekIdStart, weekIdEnd),
+    shiftIdRange: { start: shiftIdStart, end: shiftIdEnd },
+    weekIdRange: { start: weekIdStart, end: weekIdEnd },
+  };
+};
+const schedulingAlgorithm = async (requests, shiftObj, monthData) => {
   const groupedByShiftId = requests.reduce((acc, obj) => {
     const key = obj["shift_id"];
     if (!acc[key]) {
@@ -204,21 +246,14 @@ const schedulingAlgorithm = async (requests, shiftObj) => {
   const involvedUsers = [];
   const approveList = [];
 
-  const shiftIdStart = +shiftObj.id_range.start;
-  const shiftIdEnd = +shiftObj.id_range.end;
-  const weekIdStart = +shiftObj.week_range.start;
-  const weekIdEnd = +shiftObj.week_range.end;
-
-  // Initialize the roster
-  const monthData = {
-    roster: initRoster(shiftIdStart, shiftIdEnd),
-    weeks: initWeeks(weekIdStart, weekIdEnd),
-  };
-
   // Populate each shift
   for (let priorityLevel = 6; priorityLevel > 0; priorityLevel--) {
     // console.log(`priority level: ${i}`);
-    for (let j = shiftIdStart; j <= shiftIdEnd; j++) {
+    for (
+      let j = monthData.shiftIdRange.start;
+      j <= monthData.shiftIdRange.end;
+      j++
+    ) {
       if (!groupedByShiftId[j]) continue;
       const shiftRequests = groupedByShiftId[j];
       const shift = shiftObj[j];
@@ -245,36 +280,48 @@ const schedulingAlgorithm = async (requests, shiftObj) => {
   };
 };
 
-export const computeRoster = async (month, year) => {
+const getComputedResult = (monthData, shiftObj) => {
+  Object.keys(shiftObj).forEach((shift_id) => {
+    if (shiftObj[shift_id].status === "closed") {
+      monthData.roster[shift_id].status = "closed";
+    }
+  });
+  return formatResultData(monthData, shiftObj);
+};
+
+export const computeRoster = async (month, year, compute) => {
   try {
-    // Resets request to pending
-    await resetRequest();
-    efficiency = 0;
+    if (compute) {
+      // Resets request to pending
+      await resetRequest();
+      efficiency = 0;
+    }
 
     // Build request array for local use
-    const requestsThisMonth = await getComputedRequestByMonthYear(month, year);
+    const requestsThisMonth = await getRequestsByMonthYear(month, year);
     const requests = requestsThisMonth[0];
 
     // Build shift object for local use
     const shiftData = await getShiftByMonthYear(month, year);
-    const shiftObj = {};
-    shiftData.forEach((shift) => {
-      shiftObj[shift.shift_id] = shift;
-    });
-    shiftObj.id_range = {
-      start: shiftData[0].shift_id,
-      end: shiftData[shiftData.length - 1].shift_id,
-    };
-    shiftObj.week_range = {
-      start: shiftData[0].week_id,
-      end: shiftData[shiftData.length - 1].week_id,
-    };
+    const shiftObj = formatShiftData(shiftData);
 
-    const computedResult = await schedulingAlgorithm(requests, shiftObj);
+    // Build month data object for local use
+    const monthData = formatMonthData(shiftObj);
+    //
+    // bypass running algorithm if compute === 0
+    let result = {};
+    if (compute) {
+      result = await schedulingAlgorithm(requests, shiftObj, monthData);
+      await approveRequestByList(result.approveList);
+    } else {
+      console.log("aang lets go");
+      result = getComputedResult(monthData, shiftObj);
+    }
+    console.log(`All: ${result.allRequests.length}`);
+    console.log(`Open: ${result.open.length}`);
+    console.log(`Closed: ${result.closed.length}`);
 
-    await approveRequestByList(computedResult.approveList);
-
-    return computedResult;
+    return result;
   } catch (error) {
     console.error(error);
     throw error;

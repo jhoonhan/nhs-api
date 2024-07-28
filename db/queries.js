@@ -179,7 +179,8 @@ export const approveRequestByList = async (approvalList) => {
   try {
     if (!connection) connection = await pool.getConnection();
     const resUpdate = await connection.query(UPDATE_QUERY);
-    const resInsert = await connection.query(INSERT_QUERY);
+    // const resInsert = await connection.query(INSERT_QUERY);
+    const resInsert = [];
     return { updated: resUpdate[0], inserted: resInsert[0] };
   } catch (error) {
     console.error(`ERROR: ${error}`);
@@ -228,7 +229,7 @@ export const getPriorityIdByShiftId = async (shift_id) => {
   }
 };
 
-export const getComputedRequestByMonthYear = async (month, year) => {
+export const getRequestsByMonthYear = async (month, year) => {
   const QUERY = `
         SELECT 
             shift.shift_id, 
@@ -311,6 +312,22 @@ export const resetRequest = async () => {
   try {
     if (!connection) connection = await pool.getConnection();
 
+    const res = await connection.query(QUERY);
+    return res[0];
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+    throw error;
+  }
+};
+
+export const updateShift = async (shift_id, data) => {
+  console.log(data);
+  const setStatements = Object.entries(data)
+    .map(([key, value]) => `${key} = '${value}'`)
+    .join(", ");
+  const QUERY = `UPDATE shift SET ${setStatements} WHERE shift_id = ${shift_id}`;
+  try {
+    if (!connection) connection = await pool.getConnection();
     const res = await connection.query(QUERY);
     return res[0];
   } catch (error) {
