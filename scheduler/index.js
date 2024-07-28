@@ -11,7 +11,7 @@ import {
   getComputedRequestByMonthYear,
   getUserById,
   getUserByList,
-  updateRequestByList,
+  approveRequestByList,
   resetRequest,
 } from "../db/queries.js";
 
@@ -247,15 +247,16 @@ const schedulingAlgorithm = async (requests, shiftObj) => {
 
 export const computeRoster = async (month, year) => {
   try {
+    // Resets request to pending
+    await resetRequest();
+    efficiency = 0;
+
     // Build request array for local use
     const requestsThisMonth = await getComputedRequestByMonthYear(month, year);
     const requests = requestsThisMonth[0];
-    console.log("start:");
-    console.log("0");
 
     // Build shift object for local use
     const shiftData = await getShiftByMonthYear(month, year);
-    console.log("1");
     const shiftObj = {};
     shiftData.forEach((shift) => {
       shiftObj[shift.shift_id] = shift;
@@ -268,14 +269,10 @@ export const computeRoster = async (month, year) => {
       start: shiftData[0].week_id,
       end: shiftData[shiftData.length - 1].week_id,
     };
-    console.log("2");
-
-    // Resets request to pending
-    // await resetRequest();
-    // efficiency = 0;
 
     const computedResult = await schedulingAlgorithm(requests, shiftObj);
-    // await updateRequestByList(computedResult.approveList);
+
+    await approveRequestByList(computedResult.approveList);
 
     return computedResult;
   } catch (error) {

@@ -146,27 +146,41 @@ export const updateRequest = async (shift_id, user_id, status) => {
   }
 };
 
-export const updateRequestByList = async (requests) => {
-  const caseStatements = requests
+export const approveRequestByList = async (approvalList) => {
+  // Updates request rows to "approved"
+  const caseStatements = approvalList
     .map(
       ({ shift_id, user_id }) =>
         `WHEN shift_id = ${shift_id} AND user_id = ${user_id} THEN 'approved'`,
     )
     .join(" ");
-  const QUERY = `
+  const UPDATE_QUERY = `
     UPDATE request
     SET status = CASE
       ${caseStatements}
       ELSE status
     END
-    WHERE (shift_id, user_id) IN (${requests
+    WHERE (shift_id, user_id) IN (${approvalList
       .map(({ shift_id, user_id }) => `(${shift_id}, ${user_id})`)
       .join(", ")})
   `;
+
+  // Inserts new rows into approved table
+  const insertValues = approvalList
+    .map(
+      ({ shift_id, user_id }) => `(${shift_id}, ${user_id}, 'pending', ${1})`,
+    )
+    .join(", ");
+  const INSERT_QUERY = `
+  INSERT INTO approved (shift_id, user_id, status, approved_by)
+  VALUES ${insertValues}
+`;
+
   try {
     if (!connection) connection = await pool.getConnection();
-    const res = await connection.query(QUERY);
-    return res[0];
+    const resUpdate = await connection.query(UPDATE_QUERY);
+    const resInsert = await connection.query(INSERT_QUERY);
+    return { updated: resUpdate[0], inserted: resInsert[0] };
   } catch (error) {
     console.error(`ERROR: ${error}`);
     throw error;
