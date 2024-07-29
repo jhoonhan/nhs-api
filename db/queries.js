@@ -165,23 +165,50 @@ export const approveRequestByList = async (approvalList) => {
       .join(", ")})
   `;
 
-  // Inserts new rows into approved table
-  const insertValues = approvalList
-    .map(
-      ({ shift_id, user_id }) => `(${shift_id}, ${user_id}, 'pending', ${1})`,
-    )
-    .join(", ");
-  const INSERT_QUERY = `
-  INSERT INTO approved (shift_id, user_id, status, approved_by)
-  VALUES ${insertValues}
-`;
-
   try {
     if (!connection) connection = await pool.getConnection();
     const resUpdate = await connection.query(UPDATE_QUERY);
     // const resInsert = await connection.query(INSERT_QUERY);
-    const resInsert = [];
-    return { updated: resUpdate[0], inserted: resInsert[0] };
+    return { updated: resUpdate[0] };
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+    throw error;
+  }
+};
+
+export const approveShiftByList = async (approvalList) => {
+  // Updates request rows to "approved"
+  const caseStatementsStatus = approvalList
+    .map(({ shift_id }) => `WHEN shift_id = ${shift_id} THEN 'closed'`)
+    .join(" ");
+
+  const caseStatementsApprovedStaff = approvalList
+    .map(
+      ({ shift_id, approved_staff }) =>
+        `WHEN shift_id = ${shift_id} THEN ${approved_staff}`,
+    )
+    .join(" ");
+
+  const QUERY = `
+    UPDATE shift
+    SET status = CASE
+      ${caseStatementsStatus}
+      ELSE status
+    END,
+    approved_staff = CASE
+      ${caseStatementsApprovedStaff}
+      ELSE approved_staff
+    END
+    WHERE shift_id IN (${approvalList
+      .map(({ shift_id }) => `${shift_id}`)
+      .join(", ")})
+  `;
+
+  try {
+    if (!connection) connection = await pool.getConnection();
+    const res = await connection.query(QUERY);
+    // const resInsert = await connection.query(INSERT_QUERY);
+    return { updated: res[0] };
   } catch (error) {
     console.error(`ERROR: ${error}`);
     throw error;
@@ -230,34 +257,45 @@ export const getPriorityIdByShiftId = async (shift_id) => {
 };
 
 export const getRequestsByMonthYear = async (month, year) => {
+  // const QUERY = `
+  //       SELECT
+  //           shift.shift_id,
+  //           day.day_id,
+  //           day.day_num,
+  //           week.week_id,
+  //           week.month,
+  //           week.year,
+  //           week.week_start,
+  //           week.week_end,
+  //           request.*,
+  //           schedule_priority.priority,
+  //           shift.min_staff,
+  //           shift.max_staff,
+  //           shift.optimal_staff
+  //       FROM (SELECT * FROM week WHERE year = ${year} AND month = ${month}) AS week
+  //       JOIN day ON week.week_id = day.week_id
+  //       JOIN shift ON day.day_id = shift.day_id
+  //       JOIN request ON shift.shift_id = request.shift_id
+  //       JOIN schedule_priority
+  //       ON request.user_id = schedule_priority.user_id AND shift.priority_id = schedule_priority.priority_id
+  //       ORDER BY request.priority_user DESC, schedule_priority.priority ASC;
+  //   `;
   const QUERY = `
-        SELECT 
-            shift.shift_id, 
-            day.day_id,
-            day.day_num,
-            week.week_id, 
-            week.month, 
-            week.year,
-            week.week_start,
-            week.week_end, 
-            request.*, 
-            schedule_priority.priority,
-            shift.min_staff,
-            shift.max_staff,
-            shift.optimal_staff
-        FROM (SELECT * FROM week WHERE year = ${year} AND month = ${month}) AS week
-        JOIN day ON week.week_id = day.week_id
-        JOIN shift ON day.day_id = shift.day_id
-        JOIN request ON shift.shift_id = request.shift_id
-        JOIN schedule_priority
-        ON request.user_id = schedule_priority.user_id AND shift.priority_id = schedule_priority.priority_id
-        ORDER BY request.priority_user DESC, schedule_priority.priority ASC;
-    `;
+    SELECT *
+    FROM (SELECT * FROM week WHERE year = ${year} AND month = ${month}) AS week
+    JOIN day ON week.week_id = day.week_id
+    JOIN shift ON day.day_id = shift.day_id
+    JOIN request ON shift.shift_id = request.shift_id
+    JOIN schedule_priority
+    ON request.user_id = schedule_priority.user_id AND shift.priority_id = schedule_priority.priority_id
+    JOIN user ON request.user_id = user.user_id
+    JOIN nurse ON user.user_id = nurse.user_id
+    ORDER BY request.priority_user DESC, schedule_priority.priority ASC;
+  `;
   try {
     if (!connection) connection = await pool.getConnection();
 
-    const res = await connection.query(QUERY);
-    return res;
+    return await connection.query(QUERY);
   } catch (error) {
     console.error(`ERROR: ${error}`);
     throw error;
@@ -308,6 +346,21 @@ export const resetRequest = async () => {
   const QUERY = `
         UPDATE request
         SET status = "pending"
+        `;
+  try {
+    if (!connection) connection = await pool.getConnection();
+
+    const res = await connection.query(QUERY);
+    return res[0];
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+    throw error;
+  }
+};
+export const resetShift = async () => {
+  const QUERY = `
+        UPDATE shift
+        SET status = "open", approved_staff = 0
         `;
   try {
     if (!connection) connection = await pool.getConnection();

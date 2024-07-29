@@ -14,6 +14,8 @@ import {
   approveRequestByList,
   resetRequest,
   updateShift,
+  approveShiftByList,
+  resetShift,
 } from "../db/queries.js";
 
 let efficiency = 0;
@@ -54,7 +56,12 @@ const getInvolvedUserObjData = async (involvedUsers) => {
   }
 };
 
-const approveRequest = ({ weeks, roster }, shift, request, approveList) => {
+const approveRequest = (
+  { weeks, roster },
+  shift,
+  request,
+  requestApprovalList,
+) => {
   const approvedStaffs = roster[shift.shift_id].approvedStaffs;
   // Validation
   if (approvedStaffs.includes(request.user_id)) {
@@ -77,7 +84,10 @@ const approveRequest = ({ weeks, roster }, shift, request, approveList) => {
   approvedStaffs.push(request.user_id);
   shift.approved_staff += 1;
   request.status = "approved";
-  approveList.push({ shift_id: shift.shift_id, user_id: request.user_id });
+  requestApprovalList.push({
+    shift_id: shift.shift_id,
+    user_id: request.user_id,
+  });
 };
 
 const computeConflicts = ({
@@ -87,7 +97,7 @@ const computeConflicts = ({
   shift,
   monthData,
   involvedUsers,
-  approveList,
+  requestApprovalList,
 }) => {
   conflictPriority.forEach((user_id) => {
     shiftRequests.forEach((request, index) => {
@@ -97,7 +107,7 @@ const computeConflicts = ({
         request.status === "pending"
       ) {
         if (shift.approved_staff < shift.min_staff) {
-          approveRequest(monthData, shift, request, approveList);
+          approveRequest(monthData, shift, request, requestApprovalList);
           // add user to involved users
           involvedUsers.push(request.user_id);
           // remove from the conflict list
@@ -116,7 +126,7 @@ const computeRequests = ({
   shift,
   monthData,
   involvedUsers,
-  approveList,
+  requestApprovalList,
 }) => {
   shiftRequests.forEach((request) => {
     if (
@@ -128,7 +138,7 @@ const computeRequests = ({
         conflictPriority.push(request.user_id);
         efficiency += priorityLevel;
       } else {
-        approveRequest(monthData, shift, request, approveList);
+        approveRequest(monthData, shift, request, requestApprovalList);
         involvedUsers.push(request.user_id);
       }
     }
@@ -138,7 +148,7 @@ const computeRequests = ({
 const approveShiftStatus = async (shift) => {
   try {
     if (shift.approved_staff >= shift.min_staff) {
-      await updateShift(shift.shift_id, { status: "closed" });
+      // await updateShift(shift.shift_id, { status: "closed" });
       return "closed";
     } else {
       return "open";
@@ -156,7 +166,8 @@ const iterateRequests = (
   priorityLevel,
   conflictPriority,
   involvedUsers,
-  approveList,
+  requestApprovalList,
+  shiftApprovalListObj,
 ) => {
   const computeData = {
     conflictPriority,
@@ -166,15 +177,19 @@ const iterateRequests = (
     shift,
     monthData,
     involvedUsers,
-    approveList,
+    requestApprovalList,
   };
   // Prioritize user with previous conflict
   computeConflicts(computeData);
   computeRequests(computeData);
 
+  if (shift.approved_staff >= shift.min_staff) {
+    shiftApprovalListObj[shift.shift_id] = shift.approved_staff;
+  }
+
   return {
     ...monthData.roster[shift.shift_id],
-    status: approveShiftStatus(shift),
+    status: shift.approved_staff >= shift.min_staff ? "closed" : "open",
   };
 };
 
@@ -232,6 +247,17 @@ const formatMonthData = (shiftObj) => {
     weekIdRange: { start: weekIdStart, end: weekIdEnd },
   };
 };
+
+const formatShiftApprovalList = (shiftApprovalListObj) => {
+  const res = [];
+  Object.keys(shiftApprovalListObj).forEach(async (shift_id) => {
+    res.push({
+      shift_id,
+      approved_staff: shiftApprovalListObj[shift_id],
+    });
+  });
+  return res;
+};
 const schedulingAlgorithm = async (requests, shiftObj, monthData) => {
   const groupedByShiftId = requests.reduce((acc, obj) => {
     const key = obj["shift_id"];
@@ -244,11 +270,11 @@ const schedulingAlgorithm = async (requests, shiftObj, monthData) => {
 
   const conflictPriority = [];
   const involvedUsers = [];
-  const approveList = [];
+  const requestApprovalList = [];
+  const shiftApprovalListObj = {};
 
   // Populate each shift
   for (let priorityLevel = 6; priorityLevel > 0; priorityLevel--) {
-    // console.log(`priority level: ${i}`);
     for (
       let j = monthData.shiftIdRange.start;
       j <= monthData.shiftIdRange.end;
@@ -264,9 +290,9 @@ const schedulingAlgorithm = async (requests, shiftObj, monthData) => {
         priorityLevel,
         conflictPriority,
         involvedUsers,
-        approveList,
+        requestApprovalList,
+        shiftApprovalListObj,
       );
-      // console.log(`shift: ${j}: ${conflictPriority}, staffs: ${shift.staffs}`);
     }
   }
 
@@ -276,7 +302,8 @@ const schedulingAlgorithm = async (requests, shiftObj, monthData) => {
     ...formatResultData(monthData, shiftObj),
     conflicts: conflictPriority,
     involvedUsers: await getInvolvedUserObjData(involvedUsers),
-    approveList,
+    requestApprovalList,
+    shiftApprovalList: formatShiftApprovalList(shiftApprovalListObj),
   };
 };
 
@@ -294,6 +321,7 @@ export const computeRoster = async (month, year, compute) => {
     if (compute) {
       // Resets request to pending
       await resetRequest();
+      await resetShift();
       efficiency = 0;
     }
 
@@ -312,14 +340,12 @@ export const computeRoster = async (month, year, compute) => {
     let result = {};
     if (compute) {
       result = await schedulingAlgorithm(requests, shiftObj, monthData);
-      await approveRequestByList(result.approveList);
+      console.log(result.requestApprovalList);
+      await approveRequestByList(result.requestApprovalList);
+      await approveShiftByList(result.shiftApprovalList);
     } else {
-      console.log("aang lets go");
       result = getComputedResult(monthData, shiftObj);
     }
-    console.log(`All: ${result.allRequests.length}`);
-    console.log(`Open: ${result.open.length}`);
-    console.log(`Closed: ${result.closed.length}`);
 
     return result;
   } catch (error) {

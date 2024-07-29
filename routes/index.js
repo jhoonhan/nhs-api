@@ -10,6 +10,7 @@ import {
   getUserByIdHandler,
   getAllUserHandler,
   updateShiftHandler,
+  getRequestsByMonthYearHandler,
 } from "../handlers/index.js";
 
 const appRouter = express.Router();
@@ -19,7 +20,7 @@ appRouter.get("/request", getAllRequestsHandler);
 //   "/request-by-request/:shift_id/:user_id",
 //   getRequestByRequestIdHandler,
 // );
-// appRouter.get("/request-by-shift/:shift_id", getRequestByShiftIdHandler);
+appRouter.get("/request-date/:month/:year", getRequestsByMonthYearHandler);
 // appRouter.get("/request/:shift_id", getRequestByShiftIdHandler);
 
 // appRouter.post("/request-create", createRequestHandler);
