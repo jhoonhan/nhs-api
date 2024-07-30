@@ -146,37 +146,17 @@ export const updateRequest = async (shift_id, user_id, status) => {
   }
 };
 
-export const approveRequestByList = async (approvalList) => {
+export const approveRequestByList = async (approvalList, approve) => {
   if (approvalList.length === 0) return { updated: [] };
+  const status = approve ? "approved" : "rejected";
   // Updates request rows to "approved"
   const caseStatements = approvalList
     .map(
       ({ shift_id, user_id, priority_computed }) =>
-        `WHEN shift_id = ${shift_id} AND user_id = ${user_id} THEN 'approved'`,
+        `WHEN shift_id = ${shift_id} AND user_id = ${user_id} THEN '${status}'`,
     )
     .join(" ");
 
-  const caseStatementsPriority = approvalList
-    .map(
-      ({ shift_id, user_id, priority_computed }) =>
-        `WHEN shift_id = ${shift_id} AND user_id = ${user_id} THEN ${priority_computed}`,
-    )
-    .join(" ");
-
-  // const UPDATE_QUERY = `
-  //   UPDATE request
-  //   SET status = CASE
-  //     ${caseStatements}
-  //     ELSE status
-  //   END,
-  //     priority_computed = CASE
-  //     ${caseStatementsPriority}
-  //     ELSE priority_computed
-  //   END
-  //   WHERE (shift_id, user_id) IN (${approvalList
-  //     .map(({ shift_id, user_id }) => `(${shift_id}, ${user_id})`)
-  //     .join(", ")})
-  // `;
   const UPDATE_QUERY = `
     UPDATE request
     SET status = CASE
@@ -326,6 +306,28 @@ export const getRequestsByMonthYear = async (month, year) => {
   }
 };
 
+export const createRequestByList = async (requestList) => {
+  // Start the query string
+  let QUERY = `INSERT INTO request (shift_id, user_id, priority_user,priority_computed, status) VALUES `;
+
+  // Create an array of strings, each representing a row to insert
+  const values = requestList.map(
+    ({ shift_id, user_id, priority_user }) =>
+      `(${shift_id}, ${user_id}, ${priority_user}, 0, 'pending')`,
+  );
+
+  // Join the array into a single string with each element separated by a comma
+  QUERY += values.join(", ");
+
+  try {
+    if (!connection) connection = await pool.getConnection();
+    return await connection.query(QUERY);
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+    throw error;
+  }
+};
+
 export const getAllUser = async () => {
   const QUERY = "SELECT * FROM user JOIN nurse ON user.user_id = nurse.user_id";
   try {
@@ -353,7 +355,6 @@ export const getUserById = async (user_id) => {
 
 export const getUserByList = async (user_id_list) => {
   if (user_id_list.length === 0) return [];
-  console.log("letsgo?");
 
   const QUERY = `SELECT * FROM user WHERE user_id IN (${user_id_list.join(
     ",",
@@ -402,7 +403,6 @@ export const resetShift = async () => {
 };
 
 export const updateShift = async (shift_id, data) => {
-  console.log(data);
   const setStatements = Object.entries(data)
     .map(([key, value]) => `${key} = '${value}'`)
     .join(", ");

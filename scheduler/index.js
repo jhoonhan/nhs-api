@@ -18,27 +18,17 @@ import {
   resetShift,
 } from "../db/queries.js";
 
+import {
+  formatShiftData,
+  formatResultData,
+  formatMonthData,
+  formatShiftApprovalList,
+  formatComputedResult,
+  groupRequestsByShiftId,
+  formatRequest,
+} from "./dataFormatters.js";
+
 let efficiency = 0;
-
-// Init data structure
-const initShift = (shiftIdStart, shiftIdEnd) => {
-  const data = {};
-  for (let i = shiftIdStart; i <= shiftIdEnd; i++) {
-    data[i] = {
-      status: "open",
-      approvedStaffs: [],
-    };
-  }
-  return data;
-};
-
-const initWeeks = (weekIdStart, weekIdEnd) => {
-  const data = {};
-  for (let i = weekIdStart; i <= weekIdEnd; i++) {
-    data[i] = [];
-  }
-  return data;
-};
 
 const getInvolvedUserObjData = async (involvedUsers) => {
   try {
@@ -170,6 +160,7 @@ const iterateRequests = (
   computeConflicts(computeData);
   computeRequests(computeData);
 
+  // Update number of approved staff
   if (shift.approved_staff >= shift.min_staff) {
     shiftApprovalListObj[shift.shift_id] = shift.approved_staff;
   }
@@ -180,85 +171,7 @@ const iterateRequests = (
   };
 };
 
-const formatResultData = (monthData, shiftObj) => {
-  const allShifts = [];
-  const openShifts = [];
-  const closedShifts = [];
-
-  Object.keys(monthData.roster).forEach((shift_id) => {
-    allShifts.push({ ...shiftObj[shift_id], ...monthData.roster[shift_id] });
-    if (monthData.roster[shift_id].status === "open") {
-      openShifts.push({
-        ...shiftObj[shift_id],
-        ...monthData.roster[shift_id],
-      });
-    } else {
-      closedShifts.push({
-        ...shiftObj[shift_id],
-        ...monthData.roster[shift_id],
-      });
-    }
-  });
-  return {
-    allShifts: allShifts,
-    open: openShifts,
-    closed: closedShifts,
-  };
-};
-const formatShiftData = (shiftData) => {
-  const shiftObj = {};
-  shiftData.forEach((shift) => {
-    shiftObj[shift.shift_id] = shift;
-  });
-  shiftObj.id_range = {
-    start: shiftData[0].shift_id,
-    end: shiftData[shiftData.length - 1].shift_id,
-  };
-  shiftObj.week_range = {
-    start: shiftData[0].week_id,
-    end: shiftData[shiftData.length - 1].week_id,
-  };
-  return shiftObj;
-};
-
-// After receving the shift data, we need to format it into a more usable data structure
-const formatMonthData = (shiftObj) => {
-  const shiftIdStart = +shiftObj.id_range.start;
-  const shiftIdEnd = +shiftObj.id_range.end;
-  const weekIdStart = +shiftObj.week_range.start;
-  const weekIdEnd = +shiftObj.week_range.end;
-  // Initialize the roster
-  return {
-    roster: initShift(shiftIdStart, shiftIdEnd),
-    weeks: initWeeks(weekIdStart, weekIdEnd),
-    shiftIdRange: { start: shiftIdStart, end: shiftIdEnd },
-    weekIdRange: { start: weekIdStart, end: weekIdEnd },
-  };
-};
-
-const formatShiftApprovalList = (shiftApprovalListObj) => {
-  const res = [];
-  Object.keys(shiftApprovalListObj).forEach(async (shift_id) => {
-    res.push({
-      shift_id,
-      approved_staff: shiftApprovalListObj[shift_id],
-    });
-  });
-  return res;
-};
 const schedulingAlgorithm = async (requests, shiftObj, monthData) => {
-  // 7/30 Fix
-  const groupedByShiftId = requests.reduce((acc, obj) => {
-    const key = obj["shift_id"];
-    if (!acc[key]) {
-      acc[key] = [];
-    }
-    acc[key].push(obj);
-    return acc;
-  }, {});
-
-  console.log(monthData);
-
   const conflictPriority = [];
   const involvedUsers = [];
   const requestApprovalList = [];
@@ -272,10 +185,7 @@ const schedulingAlgorithm = async (requests, shiftObj, monthData) => {
       j++
     ) {
       // 7/30 Fix
-      if (!groupedByShiftId[j]) {
-        continue;
-      }
-      const shiftRequests = groupedByShiftId[j];
+      const shiftRequests = groupRequestsByShiftId(requests, monthData)[j];
       const shift = shiftObj[j];
       if (shift.status === "closed") continue;
       monthData.roster[j] = await iterateRequests(
@@ -291,6 +201,8 @@ const schedulingAlgorithm = async (requests, shiftObj, monthData) => {
     }
   }
 
+  // Reject all remaining requests
+
   console.log(`Efficiency: ${efficiency}`);
 
   return {
@@ -303,19 +215,17 @@ const schedulingAlgorithm = async (requests, shiftObj, monthData) => {
   };
 };
 
-const getComputedResult = (monthData, shiftObj) => {
-  Object.keys(shiftObj).forEach((shift_id) => {
-    if (shiftObj[shift_id].status === "closed") {
-      monthData.roster[shift_id].status = "closed";
-    }
-  });
-  return formatResultData(monthData, shiftObj);
-};
-
+/** Compute Roster
+ ** Main function to compute the roster
+ * @param month int
+ * @param year int
+ * @param compute int
+ * @returns Promise
+ */
 export const computeRoster = async (month, year, compute) => {
   try {
+    // Resets requests and shifts to pending for overhaul computation
     if (compute === 2) {
-      // Resets request to pending
       await resetRequest();
       await resetShift();
       efficiency = 0;
@@ -336,10 +246,13 @@ export const computeRoster = async (month, year, compute) => {
     let result = {};
     if (compute) {
       result = await schedulingAlgorithm(requests, shiftObj, monthData);
-      await approveRequestByList(result.requestApprovalList);
+      const formattedRequests = formatRequest(requests);
+      await approveRequestByList(formattedRequests.approved, true);
+      // Reject requests
+      await approveRequestByList(formattedRequests.rejected, false);
       await approveShiftByList(result.shiftApprovalList);
     } else {
-      result = { ...getComputedResult(monthData, shiftObj), requests };
+      result = { ...formatComputedResult(monthData, shiftObj), requests };
     }
 
     return result;

@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createRequestHandler,
+  createRequestByListHandler,
   getAllRequestsHandler,
   getRequestByShiftIdHandler,
   getRequestByRequestIdHandler,
@@ -23,7 +24,7 @@ appRouter.get("/request", getAllRequestsHandler);
 appRouter.get("/request-date/:month/:year", getRequestsByMonthYearHandler);
 // appRouter.get("/request/:shift_id", getRequestByShiftIdHandler);
 
-// appRouter.post("/request-create", createRequestHandler);
+appRouter.post("/request/create-by-list", createRequestByListHandler);
 // appRouter.put("/request-update", updateRequestHandler);
 
 appRouter.get("/roster/:month/:year/:compute", getComputedRosterHandler);

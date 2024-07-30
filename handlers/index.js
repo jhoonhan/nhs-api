@@ -5,6 +5,7 @@ import {
   updateRequest,
   deleteRecord,
   getRequestByShiftId,
+  createRequestByList,
   getUserById,
   getAllUser,
   getRequestsByMonthYear,
@@ -67,6 +68,16 @@ export const createRequestHandler = async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ status: "fail", message: error.message });
+  }
+};
+
+export const createRequestByListHandler = async (req, res) => {
+  try {
+    const request = await createRequestByList(req.body);
+    return res.status(201).json({ status: "success", data: request });
+  } catch (error) {
+    console.error(error);
+    throw error;
   }
 };
 

@@ -11,7 +11,7 @@ app.use(express.json());
 // Enable All CORS Requests
 app.use(cors());
 
-app.use("/api/v1/request", appRouter);
+app.use("/api/v1", appRouter);
 
 const PORT = process.env.PORT || 5001;
 

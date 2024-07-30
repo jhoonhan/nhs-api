@@ -110,7 +110,7 @@ CREATE TABLE `request` (
   `priority_user` int NOT NULL,
   `priority_computed` int NOT NULL,
   `request_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `status` enum('approved','pending') NOT NULL DEFAULT 'pending',
+  `status` enum('approved','pending','rejected') NOT NULL DEFAULT 'pending',
   PRIMARY KEY (`shift_id`,`user_id`),
   KEY `shift_id_index` (`shift_id`) USING BTREE,
   KEY `request_ibfk_2` (`user_id`),
