@@ -147,13 +147,36 @@ export const updateRequest = async (shift_id, user_id, status) => {
 };
 
 export const approveRequestByList = async (approvalList) => {
+  if (approvalList.length === 0) return { updated: [] };
   // Updates request rows to "approved"
   const caseStatements = approvalList
     .map(
-      ({ shift_id, user_id }) =>
+      ({ shift_id, user_id, priority_computed }) =>
         `WHEN shift_id = ${shift_id} AND user_id = ${user_id} THEN 'approved'`,
     )
     .join(" ");
+
+  const caseStatementsPriority = approvalList
+    .map(
+      ({ shift_id, user_id, priority_computed }) =>
+        `WHEN shift_id = ${shift_id} AND user_id = ${user_id} THEN ${priority_computed}`,
+    )
+    .join(" ");
+
+  // const UPDATE_QUERY = `
+  //   UPDATE request
+  //   SET status = CASE
+  //     ${caseStatements}
+  //     ELSE status
+  //   END,
+  //     priority_computed = CASE
+  //     ${caseStatementsPriority}
+  //     ELSE priority_computed
+  //   END
+  //   WHERE (shift_id, user_id) IN (${approvalList
+  //     .map(({ shift_id, user_id }) => `(${shift_id}, ${user_id})`)
+  //     .join(", ")})
+  // `;
   const UPDATE_QUERY = `
     UPDATE request
     SET status = CASE
@@ -164,7 +187,6 @@ export const approveRequestByList = async (approvalList) => {
       .map(({ shift_id, user_id }) => `(${shift_id}, ${user_id})`)
       .join(", ")})
   `;
-
   try {
     if (!connection) connection = await pool.getConnection();
     const resUpdate = await connection.query(UPDATE_QUERY);
@@ -177,6 +199,8 @@ export const approveRequestByList = async (approvalList) => {
 };
 
 export const approveShiftByList = async (approvalList) => {
+  if (approvalList.length === 0) return { updated: [] };
+
   // Updates request rows to "approved"
   const caseStatementsStatus = approvalList
     .map(({ shift_id }) => `WHEN shift_id = ${shift_id} THEN 'closed'`)
@@ -328,6 +352,9 @@ export const getUserById = async (user_id) => {
 };
 
 export const getUserByList = async (user_id_list) => {
+  if (user_id_list.length === 0) return [];
+  console.log("letsgo?");
+
   const QUERY = `SELECT * FROM user WHERE user_id IN (${user_id_list.join(
     ",",
   )})`;
@@ -335,7 +362,7 @@ export const getUserByList = async (user_id_list) => {
     if (!connection) connection = await pool.getConnection();
 
     const res = await connection.query(QUERY);
-    return res;
+    return res[0];
   } catch (error) {
     console.error(`ERROR: ${error}`);
     throw error;
@@ -345,7 +372,8 @@ export const getUserByList = async (user_id_list) => {
 export const resetRequest = async () => {
   const QUERY = `
         UPDATE request
-        SET status = "pending"
+        SET status = "pending",
+            priority_computed = 0
         `;
   try {
     if (!connection) connection = await pool.getConnection();
