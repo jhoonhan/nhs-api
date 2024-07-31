@@ -25,3 +25,20 @@ CREATE TABLE schedule_priority (
 SELECT * FROM request
 WHERE shift_id = 1
 ORDER BY priority DESC
+
+
+CREATE TABLE compute_record (
+	compute_id INT NOT NULL AUTO_INCREMENT,
+	month INT NOT NULL,
+	year INT NOT NULL,
+	PRIMARY KEY (compute_id)
+);
+
+CREATE TABLE conflict (
+	conflict_id INT NOT NULL AUTO_INCREMENT,
+	compute_id INT NOT NULL,
+	user_id INT NOT NULL,
+	order INT NOT NULL,
+	PRIMARY KEY (conflict_id),
+	FOREIGN KEY (compute_id) REFERENCES compute_record(compute_id)
+);

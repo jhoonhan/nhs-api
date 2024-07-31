@@ -10,3 +10,13 @@ Right now the algorithm does not return all shifts but shifts with a request. I 
 - Need to fix how the algorithm creates `monthdata`
 
 1. Add sending request to the backend function.
+
+
+### 7/31
+- Upon submitting request, refresh the calendar.
+- Subimtting request works. Should return users with requests left.
+
+
+### 8/1
+- Scheduling algorithm records its computation result data each time it is run to `compute_record` table.
+- Validation for 3 shifts per week in both FE and BE.

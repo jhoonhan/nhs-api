@@ -24,9 +24,12 @@ import {
   formatMonthData,
   formatShiftApprovalList,
   formatComputedResult,
-  groupRequestsByShiftId,
-  formatRequest,
+  groupRequestByShiftId,
+  groupRequestByUserId,
+  groupRequestByStatus,
 } from "./dataFormatters.js";
+
+import { MAX_PRIORITY } from "../config.js";
 
 let efficiency = 0;
 
@@ -44,6 +47,48 @@ const getInvolvedUserObjData = async (involvedUsers) => {
     console.error(error);
     throw error;
   }
+};
+const getUserData = (requests) => {
+  const res = {};
+  const groupedRequest = groupRequestByUserId(requests);
+
+  Object.keys(groupedRequest).forEach(async (user_id) => {
+    const unusedPriorities = getUnusedPriorities(groupedRequest[user_id]);
+    res[user_id] = {
+      requests: groupedRequest[user_id],
+      unusedPriorities,
+      status: unusedPriorities.length === 0 ? "completed" : "incomplete",
+    };
+  });
+
+  return res;
+};
+
+const getUnusedPriorities = (userRequest) => {
+  let approvedAndPendingRequests = userRequest.approved.concat(
+    userRequest.pending,
+  );
+  if (!approvedAndPendingRequests) {
+    approvedAndPendingRequests = [];
+  }
+
+  const range = Array.from({ length: MAX_PRIORITY }, (_, i) => i + 1);
+  //
+  // // Map requests to an array of priority_user values
+  const priorities = approvedAndPendingRequests.map(
+    (request) => request.priority_user,
+  );
+
+  // Filter out those that exist in the priorities array
+  return range.filter((num) => !priorities.includes(num));
+};
+
+const rejectPendingRequests = (requests) => {
+  requests.forEach((request) => {
+    if (request.status === "pending") {
+      request.status = "rejected";
+    }
+  });
 };
 
 const approveRequest = (
@@ -178,14 +223,14 @@ const schedulingAlgorithm = async (requests, shiftObj, monthData) => {
   const shiftApprovalListObj = {};
 
   // Populate each shift
-  for (let priorityLevel = 6; priorityLevel > 0; priorityLevel--) {
+  for (let priorityLevel = MAX_PRIORITY; priorityLevel > 0; priorityLevel--) {
     for (
       let j = monthData.shiftIdRange.start;
       j <= monthData.shiftIdRange.end;
       j++
     ) {
       // 7/30 Fix
-      const shiftRequests = groupRequestsByShiftId(requests, monthData)[j];
+      const shiftRequests = groupRequestByShiftId(requests, monthData)[j];
       const shift = shiftObj[j];
       if (shift.status === "closed") continue;
       monthData.roster[j] = await iterateRequests(
@@ -204,6 +249,7 @@ const schedulingAlgorithm = async (requests, shiftObj, monthData) => {
   // Reject all remaining requests
 
   console.log(`Efficiency: ${efficiency}`);
+  console.log(conflictPriority);
 
   return {
     ...formatResultData(monthData, shiftObj),
@@ -246,14 +292,18 @@ export const computeRoster = async (month, year, compute) => {
     let result = {};
     if (compute) {
       result = await schedulingAlgorithm(requests, shiftObj, monthData);
-      const formattedRequests = formatRequest(requests);
+      // Change pending status to rejected
+      rejectPendingRequests(requests);
+      const formattedRequests = groupRequestByStatus(requests);
       await approveRequestByList(formattedRequests.approved, true);
-      // Reject requests
+      // Submit rejected requests
       await approveRequestByList(formattedRequests.rejected, false);
       await approveShiftByList(result.shiftApprovalList);
     } else {
       result = { ...formatComputedResult(monthData, shiftObj), requests };
     }
+
+    result["userData"] = getUserData(requests);
 
     return result;
   } catch (error) {

@@ -95,7 +95,7 @@ export const formatComputedResult = (monthData, shiftObj) => {
   return formatResultData(monthData, shiftObj);
 };
 
-export const groupRequestsByShiftId = (requests, monthData) => {
+export const groupRequestByShiftId = (requests, monthData) => {
   // 7/30 Fix
   const data = {};
   for (
@@ -112,14 +112,34 @@ export const groupRequestsByShiftId = (requests, monthData) => {
   return data;
 };
 
-export const formatRequest = (requests) => {
-  const res = { approved: [], rejected: [] };
+// 7/31 fix
+export const groupRequestByUserId = (requests) => {
+  const res = {};
+  requests.forEach((request) => {
+    if (!res[request.user_id]) {
+      res[request.user_id] = { approved: [], pending: [], rejected: [] };
+    }
+    if (request.status === "pending") {
+      res[request.user_id].pending.push(request);
+    } else if (request.status === "approved") {
+      res[request.user_id].approved.push(request);
+    } else if (request.status === "rejected") {
+      res[request.user_id].rejected.push(request);
+    }
+  });
+
+  return res;
+};
+
+export const groupRequestByStatus = (requests) => {
+  const res = { approved: [], pending: [], rejected: [] };
   requests.forEach((request) => {
     if (request.status === "pending") {
-      request.status = "rejected";
-      res.rejected.push(request);
+      res.pending.push(request);
     } else if (request.status === "approved") {
       res.approved.push(request);
+    } else if (request.status === "rejected") {
+      res.rejected.push(request);
     }
   });
 
