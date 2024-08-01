@@ -33,21 +33,6 @@ import { MAX_PRIORITY } from "../config.js";
 
 let efficiency = 0;
 
-const getInvolvedUserObjData = async (involvedUsers) => {
-  try {
-    const userObj = {};
-    const res = await getUserByList([...new Set(involvedUsers)]);
-    if (Array.isArray(res) && res[0]) {
-      res.forEach((user) => {
-        userObj[user.user_id] = user;
-      });
-    }
-    return userObj;
-  } catch (error) {
-    console.error(error);
-    throw error;
-  }
-};
 const getUserData = (requests) => {
   const res = {};
   const groupedRequest = groupRequestByUserId(requests);
@@ -132,7 +117,6 @@ const computeConflicts = ({
   priorityLevel,
   shift,
   monthData,
-  involvedUsers,
   requestApprovalList,
 }) => {
   conflictPriority.forEach((user_id) => {
@@ -144,8 +128,6 @@ const computeConflicts = ({
       ) {
         if (shift.approved_staff < shift.min_staff) {
           approveRequest(monthData, shift, request, requestApprovalList);
-          // add user to involved users
-          involvedUsers.push(request.user_id);
           // remove from the conflict list
           conflictPriority.splice(index - 1, 1);
           efficiency -= request.priority_user;
@@ -161,7 +143,6 @@ const computeRequests = ({
   priorityLevel,
   shift,
   monthData,
-  involvedUsers,
   requestApprovalList,
 }) => {
   shiftRequests.forEach((request) => {
@@ -175,7 +156,6 @@ const computeRequests = ({
         efficiency += priorityLevel;
       } else {
         approveRequest(monthData, shift, request, requestApprovalList);
-        involvedUsers.push(request.user_id);
       }
     }
   });
@@ -187,7 +167,6 @@ const iterateRequests = (
   shiftRequests,
   priorityLevel,
   conflictPriority,
-  involvedUsers,
   requestApprovalList,
   shiftApprovalListObj,
 ) => {
@@ -198,7 +177,6 @@ const iterateRequests = (
     priorityLevel,
     shift,
     monthData,
-    involvedUsers,
     requestApprovalList,
   };
   // Prioritize user with previous conflict
@@ -218,7 +196,6 @@ const iterateRequests = (
 
 const schedulingAlgorithm = async (requests, shiftObj, monthData) => {
   const conflictPriority = [];
-  const involvedUsers = [];
   const requestApprovalList = [];
   const shiftApprovalListObj = {};
 
@@ -239,7 +216,6 @@ const schedulingAlgorithm = async (requests, shiftObj, monthData) => {
         shiftRequests,
         priorityLevel,
         conflictPriority,
-        involvedUsers,
         requestApprovalList,
         shiftApprovalListObj,
       );
@@ -254,7 +230,6 @@ const schedulingAlgorithm = async (requests, shiftObj, monthData) => {
   return {
     ...formatResultData(monthData, shiftObj),
     conflicts: conflictPriority,
-    involvedUsers: await getInvolvedUserObjData(involvedUsers),
     requestApprovalList,
     shiftApprovalList: formatShiftApprovalList(shiftApprovalListObj),
     requests,
