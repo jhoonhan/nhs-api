@@ -19,9 +19,9 @@ const initWeeks = (weekIdStart, weekIdEnd) => {
 };
 
 export const formatShiftData = (shiftData) => {
-  const shiftObj = {};
+  const shiftObj = { shifts: {}, id_range: {}, week_range: {} };
   shiftData.forEach((shift) => {
-    shiftObj[shift.shift_id] = shift;
+    shiftObj.shifts[shift.shift_id] = shift;
   });
   shiftObj.id_range = {
     start: shiftData[0].shift_id,
@@ -35,28 +35,27 @@ export const formatShiftData = (shiftData) => {
 };
 
 export const formatResultData = (monthData, shiftObj) => {
-  const allShifts = [];
   const openShifts = [];
   const closedShifts = [];
 
   Object.keys(monthData.roster).forEach((shift_id) => {
-    allShifts.push({ ...shiftObj[shift_id], ...monthData.roster[shift_id] });
     if (monthData.roster[shift_id].status === "open") {
       openShifts.push({
-        ...shiftObj[shift_id],
+        ...shiftObj.shifts[shift_id],
         ...monthData.roster[shift_id],
       });
     } else {
       closedShifts.push({
-        ...shiftObj[shift_id],
+        ...shiftObj.shifts[shift_id],
         ...monthData.roster[shift_id],
       });
     }
   });
   return {
-    allShifts: allShifts,
+    shifts: shiftObj,
     open: openShifts,
     closed: closedShifts,
+    monthData,
   };
 };
 
@@ -87,8 +86,8 @@ export const formatShiftApprovalList = (shiftApprovalListObj) => {
 };
 
 export const formatComputedResult = (monthData, shiftObj) => {
-  Object.keys(shiftObj).forEach((shift_id) => {
-    if (shiftObj[shift_id].status === "closed") {
+  Object.keys(shiftObj.shifts).forEach((shift_id) => {
+    if (shiftObj.shifts[shift_id].status === "closed") {
       monthData.roster[shift_id].status = "closed";
     }
   });

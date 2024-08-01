@@ -16,6 +16,7 @@ import {
   updateShift,
   approveShiftByList,
   resetShift,
+  getAllUser,
 } from "../db/queries.js";
 
 import {
@@ -33,20 +34,30 @@ import { MAX_PRIORITY } from "../config.js";
 
 let efficiency = 0;
 
-const getUserData = (requests) => {
-  const res = {};
-  const groupedRequest = groupRequestByUserId(requests);
+const getUserData = async (requests) => {
+  try {
+    const res = {};
+    const groupedRequest = groupRequestByUserId(requests);
+    const allUsers = await getAllUser();
 
-  Object.keys(groupedRequest).forEach(async (user_id) => {
-    const unusedPriorities = getUnusedPriorities(groupedRequest[user_id]);
-    res[user_id] = {
-      requests: groupedRequest[user_id],
-      unusedPriorities,
-      status: unusedPriorities.length === 0 ? "completed" : "incomplete",
-    };
-  });
+    allUsers.forEach((user) => {
+      res[user.user_id] = user;
+    });
 
-  return res;
+    Object.keys(groupedRequest).forEach((user_id) => {
+      const unusedPriorities = getUnusedPriorities(groupedRequest[user_id]);
+      res[user_id] = {
+        ...res[user_id],
+        unusedPriorities,
+        status: unusedPriorities.length === 0 ? "completed" : "incomplete",
+      };
+    });
+
+    return res;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
 };
 
 const getUnusedPriorities = (userRequest) => {
@@ -208,7 +219,7 @@ const schedulingAlgorithm = async (requests, shiftObj, monthData) => {
     ) {
       // 7/30 Fix
       const shiftRequests = groupRequestByShiftId(requests, monthData)[j];
-      const shift = shiftObj[j];
+      const shift = shiftObj.shifts[j];
       if (shift.status === "closed") continue;
       monthData.roster[j] = await iterateRequests(
         monthData,
@@ -278,7 +289,7 @@ export const computeRoster = async (month, year, compute) => {
       result = { ...formatComputedResult(monthData, shiftObj), requests };
     }
 
-    result["userData"] = getUserData(requests);
+    result["userData"] = await getUserData(requests);
 
     return result;
   } catch (error) {

@@ -18,5 +18,15 @@ Right now the algorithm does not return all shifts but shifts with a request. I 
 
 
 ### 8/1
-- Scheduling algorithm records its computation result data each time it is run to `compute_record` table.
 - Validation for 3 shifts per week in both FE and BE.
+- It is implemented in FE only as request only comes from FE. But if we were to allow more than 12 selections, BE should also have the validation.
+- Convert getUnusedPriorities to a custom hook.
+
+
+
+
+### TODO
+- User API
+
+### Backlog
+- Scheduling algorithm records its computation result data each time it is run to `compute_record` table.
