@@ -13,6 +13,8 @@ import {
   updateUser,
 } from "../db/queries.js";
 
+import jwt from "jsonwebtoken";
+
 import { computeRoster } from "../scheduler/index.js";
 import { pool } from "../db/index.js";
 
@@ -137,7 +139,16 @@ export const getComputedRosterHandler = async (req, res) => {
 // USERS
 export const getAllUserHandler = async (req, res) => {
   try {
+    const decodedToken = jwt.decode(req.headers.authorization.split(" ")[1]);
     const requests = await getAllUser();
+    // console.log(decodedToken);
+    // context.res =
+    //   decodedToken.scp.split(" ").indexOf("Greeting.Read") > -1
+    //     ? {
+    //         body: "Hello, world. You were able to access this because you provided a valid access token with the Greeting.Read scope as a claim.",
+    //       }
+    //     : { body: "Missing required scope.", status: 403 };
+
     return res.status(200).json({ status: "success", data: requests });
   } catch (error) {
     console.error(error);
