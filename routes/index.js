@@ -8,10 +8,10 @@ import {
   updateRequestHandler,
   deleteRequestHandler,
   getComputedRosterHandler,
-  getUserByIdHandler,
   getAllUserHandler,
   updateShiftHandler,
   getRequestsByMonthYearHandler,
+  loginHandler,
 } from "../handlers/index.js";
 
 const appRouter = express.Router();
@@ -32,6 +32,7 @@ appRouter.get("/roster/:month/:year/:compute", getComputedRosterHandler);
 appRouter.put("/shift-update", updateShiftHandler);
 
 appRouter.get("/user", getAllUserHandler);
+appRouter.post("/login", loginHandler);
 // appRouter.get("/user/:user_id", getUserByIdHandler);
 //
 // appRouter.delete("/delete/:shift_id/:user_id", deleteRequestHandler);

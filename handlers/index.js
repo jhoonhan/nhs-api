@@ -10,6 +10,7 @@ import {
   getAllUser,
   getRequestsByMonthYear,
   updateShift,
+  updateUser,
 } from "../db/queries.js";
 
 import { computeRoster } from "../scheduler/index.js";
@@ -146,11 +147,37 @@ export const getAllUserHandler = async (req, res) => {
 export const getUserByIdHandler = async (req, res) => {
   try {
     const userId = req.params.user_id;
-    const user = await getUserById(userId);
-    return res.status(200).json({ status: "success", data: user });
+    const user = await getUserById(userId, "user_id");
+    return res.status(200).json({ status: "success", data: user[0] });
   } catch (error) {
     console.error(error);
     res.status(500).json({ status: "fail", message: error.message });
+  }
+};
+
+export const loginHandler = async (req, res) => {
+  const { ms_id, firstname, lastname, email } = req.body;
+  try {
+    const user = await getUserById(email, "email");
+
+    // If user was not added to db by the manager.
+    if (!user[0]) {
+      throw new Error("User does not exist. Contact your manager.");
+    }
+
+    // If existing user, end prematurely
+    if (user[0].ms_id !== "0") {
+      return res.status(200).json({ status: "success", data: user[0] });
+    }
+
+    // If new user
+    await updateUser(user[0].user_id, ["ms_id", ms_id]);
+    user[0].ms_id = ms_id;
+
+    return res.status(200).json({ status: "success", data: user[0] });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ status: "fail", message: e.message });
   }
 };
 

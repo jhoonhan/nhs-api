@@ -340,13 +340,13 @@ export const getAllUser = async () => {
     throw error;
   }
 };
-export const getUserById = async (user_id) => {
-  const QUERY = `SELECT * FROM user WHERE user_id = ${user_id}`;
+export const getUserById = async (user_id, type) => {
+  const QUERY = `SELECT * FROM user WHERE ${type} = "${user_id}"`;
   try {
     if (!connection) connection = await pool.getConnection();
 
     const res = await connection.query(QUERY);
-    return res;
+    return res[0];
   } catch (error) {
     console.error(`ERROR: ${error}`);
     throw error;
@@ -362,6 +362,18 @@ export const getUserByList = async (user_id_list) => {
   try {
     if (!connection) connection = await pool.getConnection();
 
+    const res = await connection.query(QUERY);
+    return res[0];
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+    throw error;
+  }
+};
+
+export const updateUser = async (user_id, [key, value]) => {
+  const QUERY = `UPDATE user SET ${key} = '${value}' WHERE user_id = ${user_id}`;
+  try {
+    if (!connection) connection = await pool.getConnection();
     const res = await connection.query(QUERY);
     return res[0];
   } catch (error) {
