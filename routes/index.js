@@ -8,8 +8,9 @@ import {
   updateRequestHandler,
   deleteRequestHandler,
   getComputedRosterHandler,
-  getAllUserHandler,
   updateShiftHandler,
+  getAllUserHandler,
+  getUserByIdHandler,
   getRequestsByMonthYearHandler,
   loginHandler,
 } from "../handlers/index.js";
@@ -32,8 +33,8 @@ appRouter.get("/roster/:month/:year/:compute", getComputedRosterHandler);
 appRouter.put("/shift-update", updateShiftHandler);
 
 appRouter.get("/user", getAllUserHandler);
+appRouter.get("/user/:id_type/:user_id", getUserByIdHandler);
 appRouter.post("/login", loginHandler);
-// appRouter.get("/user/:user_id", getUserByIdHandler);
 //
 // appRouter.delete("/delete/:shift_id/:user_id", deleteRequestHandler);
 

@@ -14,19 +14,19 @@ app.use(express.json());
 app.use(cors());
 
 // Add Express middleware to validate JWT access tokens
-app.use((req, res, next) => {
-  if (!req.headers.authorization) {
-    return res
-      .status(401)
-      .send({ status: "fail", message: "No Authorization Header" });
-  }
-  const decodedToken = jwt.decode(req.headers.authorization.split(" ")[1]);
-  if (!decodedToken) {
-    return res.status(401).send({ status: "fail", message: "Invalid Token" });
-  } else {
-    next();
-  }
-});
+// app.use((req, res, next) => {
+//   if (!req.headers.authorization) {
+//     return res
+//       .status(401)
+//       .send({ status: "fail", message: "No Authorization Header" });
+//   }
+//   const decodedToken = jwt.decode(req.headers.authorization.split(" ")[1]);
+//   if (!decodedToken) {
+//     return res.status(401).send({ status: "fail", message: "Invalid Token" });
+//   } else {
+//     next();
+//   }
+// });
 
 app.use("/api/v1", appRouter);
 

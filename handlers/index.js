@@ -74,7 +74,7 @@ export const createRequestHandler = async (req, res) => {
   }
 };
 
-export const createRequestByListHandler = async (req, res) => {
+export const createRequestByListHandler = async (accessToken, req, res) => {
   try {
     const request = await createRequestByList(req.body);
     return res.status(201).json({ status: "success", data: request });
@@ -139,26 +139,38 @@ export const getComputedRosterHandler = async (req, res) => {
 // USERS
 export const getAllUserHandler = async (req, res) => {
   try {
-    const decodedToken = jwt.decode(req.headers.authorization.split(" ")[1]);
     const requests = await getAllUser();
-    // console.log(decodedToken);
-    // context.res =
-    //   decodedToken.scp.split(" ").indexOf("Greeting.Read") > -1
-    //     ? {
-    //         body: "Hello, world. You were able to access this because you provided a valid access token with the Greeting.Read scope as a claim.",
-    //       }
-    //     : { body: "Missing required scope.", status: 403 };
-
     return res.status(200).json({ status: "success", data: requests });
   } catch (error) {
     console.error(error);
     res.status(500).json({ status: "fail", message: "Server Error" });
   }
 };
+
+/** 8/5 Update
+ * This function is used to get user by id, email, or ms_id.
+ * @param req
+ * @param res
+ * @returns {Promise<*>}
+ */
 export const getUserByIdHandler = async (req, res) => {
   try {
-    const userId = req.params.user_id;
-    const user = await getUserById(userId, "user_id");
+    let idType;
+    switch (req.params.id_type) {
+      case "0":
+        idType = "user_id";
+        break;
+      case "1":
+        idType = "ms_id";
+        break;
+      case "2":
+        idType = "email";
+        break;
+      default:
+        idType = "user_id";
+    }
+    const id = req.params.user_id;
+    const user = await getUserById(id, idType);
     return res.status(200).json({ status: "success", data: user[0] });
   } catch (error) {
     console.error(error);
