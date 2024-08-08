@@ -74,7 +74,7 @@ export const createRequestHandler = async (req, res) => {
   }
 };
 
-export const createRequestByListHandler = async (accessToken, req, res) => {
+export const createRequestByListHandler = async (req, res) => {
   try {
     const request = await createRequestByList(req.body);
     return res.status(201).json({ status: "success", data: request });
@@ -181,6 +181,7 @@ export const getUserByIdHandler = async (req, res) => {
 export const loginHandler = async (req, res) => {
   const { ms_id, firstname, lastname, email } = req.body;
   try {
+    console.log(email);
     const user = await getUserById(email, "email");
 
     // If user was not added to db by the manager.

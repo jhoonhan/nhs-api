@@ -14,7 +14,7 @@ import {
   approveRequestByList,
   resetRequest,
   updateShift,
-  approveShiftByList,
+  updateShiftByList,
   resetShift,
   getAllUser,
 } from "../db/queries.js";
@@ -179,7 +179,7 @@ const iterateRequests = (
   priorityLevel,
   conflictPriority,
   requestApprovalList,
-  shiftApprovalListObj,
+  shiftUpdateListObj,
 ) => {
   const computeData = {
     conflictPriority,
@@ -195,20 +195,23 @@ const iterateRequests = (
   computeRequests(computeData);
 
   // Update number of approved staff
-  if (shift.approved_staff >= shift.min_staff) {
-    shiftApprovalListObj[shift.shift_id] = shift.approved_staff;
-  }
+  // if (shift.approved_staff >= shift.min_staff) {
+  const shiftStatus =
+    shift.approved_staff >= shift.min_staff ? "closed" : "open";
+  shiftUpdateListObj[shift.shift_id] = shift;
+  shiftUpdateListObj[shift.shift_id].status = shiftStatus;
+  // }
 
   return {
     ...monthData.roster[shift.shift_id],
-    status: shift.approved_staff >= shift.min_staff ? "closed" : "open",
+    status: shiftStatus,
   };
 };
 
 const schedulingAlgorithm = async (requests, shiftObj, monthData) => {
   const conflictPriority = [];
   const requestApprovalList = [];
-  const shiftApprovalListObj = {};
+  const shiftUpdateListObj = {};
 
   // Populate each shift
   for (let priorityLevel = MAX_PRIORITY; priorityLevel > 0; priorityLevel--) {
@@ -228,7 +231,7 @@ const schedulingAlgorithm = async (requests, shiftObj, monthData) => {
         priorityLevel,
         conflictPriority,
         requestApprovalList,
-        shiftApprovalListObj,
+        shiftUpdateListObj,
       );
     }
   }
@@ -242,7 +245,7 @@ const schedulingAlgorithm = async (requests, shiftObj, monthData) => {
     ...formatResultData(monthData, shiftObj),
     conflicts: conflictPriority,
     requestApprovalList,
-    shiftApprovalList: formatShiftApprovalList(shiftApprovalListObj),
+    shiftUpdateList: formatShiftApprovalList(shiftUpdateListObj),
     requests,
   };
 };
@@ -284,7 +287,7 @@ export const computeRoster = async (month, year, compute) => {
       await approveRequestByList(formattedRequests.approved, true);
       // Submit rejected requests
       await approveRequestByList(formattedRequests.rejected, false);
-      await approveShiftByList(result.shiftApprovalList);
+      await updateShiftByList(result.shiftUpdateList);
     } else {
       result = { ...formatComputedResult(monthData, shiftObj), requests };
     }

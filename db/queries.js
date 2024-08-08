@@ -178,15 +178,17 @@ export const approveRequestByList = async (approvalList, approve) => {
   }
 };
 
-export const approveShiftByList = async (approvalList) => {
-  if (approvalList.length === 0) return { updated: [] };
+export const updateShiftByList = async (updateList) => {
+  if (updateList.length === 0) return { updated: [] };
 
   // Updates request rows to "approved"
-  const caseStatementsStatus = approvalList
-    .map(({ shift_id }) => `WHEN shift_id = ${shift_id} THEN 'closed'`)
+  const caseStatementsStatus = updateList
+    .map(
+      ({ shift_id, status }) => `WHEN shift_id = ${shift_id} THEN '${status}'`,
+    )
     .join(" ");
 
-  const caseStatementsApprovedStaff = approvalList
+  const caseStatementsApprovedStaff = updateList
     .map(
       ({ shift_id, approved_staff }) =>
         `WHEN shift_id = ${shift_id} THEN ${approved_staff}`,
@@ -203,7 +205,7 @@ export const approveShiftByList = async (approvalList) => {
       ${caseStatementsApprovedStaff}
       ELSE approved_staff
     END
-    WHERE shift_id IN (${approvalList
+    WHERE shift_id IN (${updateList
       .map(({ shift_id }) => `${shift_id}`)
       .join(", ")})
   `;

@@ -79,7 +79,8 @@ export const formatShiftApprovalList = (shiftApprovalListObj) => {
   Object.keys(shiftApprovalListObj).forEach(async (shift_id) => {
     res.push({
       shift_id,
-      approved_staff: shiftApprovalListObj[shift_id],
+      approved_staff: shiftApprovalListObj[shift_id].approved_staff,
+      status: shiftApprovalListObj[shift_id].status,
     });
   });
   return res;
