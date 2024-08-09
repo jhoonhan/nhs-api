@@ -336,6 +336,7 @@ export const getAllUser = async () => {
     if (!connection) connection = await pool.getConnection();
 
     const res = await connection.query(QUERY);
+    console.log(res);
     return res[0];
   } catch (error) {
     console.error(`ERROR: ${error}`);

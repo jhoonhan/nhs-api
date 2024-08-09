@@ -218,3 +218,6 @@ export const updateShiftHandler = async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 };
+export const inviteHandler = async (req, res) => {
+  console.log(req);
+};

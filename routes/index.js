@@ -13,6 +13,7 @@ import {
   getUserByIdHandler,
   getRequestsByMonthYearHandler,
   loginHandler,
+  inviteHandler,
 } from "../handlers/index.js";
 
 const appRouter = express.Router();
@@ -35,6 +36,7 @@ appRouter.put("/shift-update", updateShiftHandler);
 appRouter.get("/user", getAllUserHandler);
 appRouter.get("/user/:id_type/:user_id", getUserByIdHandler);
 appRouter.post("/login", loginHandler);
+appRouter.post("/invite", inviteHandler);
 //
 // appRouter.delete("/delete/:shift_id/:user_id", deleteRequestHandler);
 

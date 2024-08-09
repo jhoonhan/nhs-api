@@ -194,8 +194,8 @@ const iterateRequests = (
   computeConflicts(computeData);
   computeRequests(computeData);
 
-  // Update number of approved staff
-  // if (shift.approved_staff >= shift.min_staff) {
+  // Update number of approved staff & status
+  // 8/8 - bug fix. After first iteration of computation, the shift status is not updated to closed when condition is met.
   const shiftStatus =
     shift.approved_staff >= shift.min_staff ? "closed" : "open";
   shiftUpdateListObj[shift.shift_id] = shift;
