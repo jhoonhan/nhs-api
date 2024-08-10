@@ -15,6 +15,9 @@ import {
 
 import jwt from "jsonwebtoken";
 
+import axios from "axios";
+import { ConfidentialClientApplication } from "@azure/msal-node";
+
 import { computeRoster } from "../scheduler/index.js";
 import { pool } from "../db/index.js";
 
@@ -181,7 +184,6 @@ export const getUserByIdHandler = async (req, res) => {
 export const loginHandler = async (req, res) => {
   const { ms_id, firstname, lastname, email } = req.body;
   try {
-    console.log(email);
     const user = await getUserById(email, "email");
 
     // If user was not added to db by the manager.
@@ -219,5 +221,42 @@ export const updateShiftHandler = async (req, res) => {
   }
 };
 export const inviteHandler = async (req, res) => {
-  console.log(req);
+  const { firstname, lastname, band, email } = req.body;
+  try {
+    const pca = new ConfidentialClientApplication({
+      auth: {
+        clientId: "69633545-10c6-4412-b2dc-f395d7eaded7",
+        authority: `https://login.microsoftonline.com/f5ebf3d1-9216-4ea3-94fc-cd4ffde6898a`,
+        clientSecret: "Eus8Q~tZ-Fqtbuxe3BHux4gilQqsiLlBzd5~6aSK",
+      },
+    });
+
+    const accessTokenResponse = await pca.acquireTokenByClientCredential({
+      scopes: ["https://graph.microsoft.com/.default"],
+    });
+
+    const invitation = {
+      invitedUserEmailAddress: email,
+      inviteRedirectUrl: process.env.REDIRECT_URI,
+      sendInvitationMessage: true,
+    };
+
+    const response = await axios.post(
+      "https://graph.microsoft.com/v1.0/invitations",
+      invitation,
+      {
+        headers: {
+          Authorization: `Bearer ${accessTokenResponse.accessToken}`,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    console.log(response);
+
+    return res.status(201).json({ status: "success" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ status: "fail", message: error.message });
+  }
 };
