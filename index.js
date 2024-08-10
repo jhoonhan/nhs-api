@@ -4,8 +4,7 @@ import { connectToDatabase } from "./db/index.js";
 import cors from "cors";
 
 import { expressjwt } from "express-jwt";
-import { expressJwtSecret, JwksClient } from "jwks-rsa";
-import jwtAuthz from "express-jwt-authz";
+import { expressJwtSecret } from "jwks-rsa";
 
 const app = express();
 
@@ -15,20 +14,20 @@ app.use(express.json());
 // Enable All CORS Requests
 app.use(cors());
 
-// Add Express middleware to validate JWT access tokens
-// app.use((req, res, next) => {
-//   if (!req.headers.authorization) {
-//     return res
-//       .status(401)
-//       .send({ status: "fail", message: "No Authorization Header" });
-//   }
-//   const decodedToken = jwt.decode(req.headers.authorization.split(" ")[1]);
-//   if (!decodedToken) {
-//     return res.status(401).send({ status: "fail", message: "Invalid Token" });
-//   } else {
-//     next();
-//   }
-// });
+// 8-10 JWT Authorization
+app.use(
+  expressjwt({
+    secret: expressJwtSecret({
+      jwksUri:
+        "https://login.microsoftonline.com/" +
+        process.env.TENANT_ID +
+        "/discovery/v2.0/keys",
+    }),
+    audience: process.env.API_SCOPE,
+    issuer: `https://sts.windows.net/${process.env.TENANT_ID}/`,
+    algorithms: ["RS256"],
+  }),
+);
 
 app.use("/api/v1", appRouter);
 
