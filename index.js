@@ -3,7 +3,9 @@ import appRouter from "./routes/index.js";
 import { connectToDatabase } from "./db/index.js";
 import cors from "cors";
 
-import jwt from "jsonwebtoken";
+import { expressjwt } from "express-jwt";
+import { expressJwtSecret, JwksClient } from "jwks-rsa";
+import jwtAuthz from "express-jwt-authz";
 
 const app = express();
 
