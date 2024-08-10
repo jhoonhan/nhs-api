@@ -324,7 +324,6 @@ export const createRequestByList = async (requestList) => {
   try {
     if (!connection) connection = await pool.getConnection();
     const res = await connection.query(QUERY);
-    console.log(res);
     return res;
   } catch (error) {
     console.error(`ERROR: ${error}`);
