@@ -336,7 +336,6 @@ export const getAllUser = async () => {
     if (!connection) connection = await pool.getConnection();
 
     const res = await connection.query(QUERY);
-    console.log(res);
     return res[0];
   } catch (error) {
     console.error(`ERROR: ${error}`);
@@ -344,7 +343,11 @@ export const getAllUser = async () => {
   }
 };
 export const getUserById = async (user_id, type) => {
-  const QUERY = `SELECT * FROM user WHERE ${type} = "${user_id}"`;
+  const QUERY = `
+          SELECT * FROM user 
+            JOIN nurse ON user.user_id = nurse.user_id 
+          WHERE ${type} = "${user_id}";
+        `;
   try {
     if (!connection) connection = await pool.getConnection();
 
@@ -373,12 +376,56 @@ export const getUserByList = async (user_id_list) => {
   }
 };
 
-export const updateUser = async (user_id, [key, value]) => {
-  const QUERY = `UPDATE user SET ${key} = '${value}' WHERE user_id = ${user_id}`;
+export const createUser = async (data) => {
+  const { firstname, lastname, email, band, seniority } = data;
+  const QUERY_USER = `
+        INSERT INTO user (firstname, lastname, email, ms_id, authority) 
+        VALUES ('${firstname}', '${lastname}', '${email}', 0, 0)
+        `;
+  try {
+    if (!connection) connection = await pool.getConnection();
+    const resUser = await connection.query(QUERY_USER);
+    const userId = resUser[0].insertId;
+
+    const QUERY_NURSE = `
+        INSERT INTO nurse (user_id, band, seniority, can_charge, contract_type) 
+        VALUES (${userId}, ${band}, ${seniority}, 0, 'full')
+        `;
+    await connection.query(QUERY_NURSE);
+
+    return { user_id: resUser[0].insertId };
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+    throw error;
+  }
+};
+
+// 8-10 inacgive user must have 0 authority so that they cannot access the site.
+
+// 8-10 Change the sql query so that it also updates nurse table
+export const updateUser = async (user_id, data) => {
+  const QUERY = `
+          UPDATE user
+            SET firstname = '${data.firstname}',
+                lastname = '${data.lastname}',
+                email = '${data.email}',
+                ms_id = '${data.ms_id}',
+                status = '${data.status}',
+                authority = '${data.authority}'
+            WHERE user_id = ${user_id};
+          `;
+  const QUERY_NURSE = `
+          UPDATE nurse
+            SET band = ${data.band},
+                seniority = ${data.seniority}
+            WHERE user_id = ${user_id};
+          `;
+
   try {
     if (!connection) connection = await pool.getConnection();
     const res = await connection.query(QUERY);
-    return res[0];
+    const nurseRes = await connection.query(QUERY_NURSE);
+    return { user: res[0], nurse: nurseRes[0] };
   } catch (error) {
     console.error(`ERROR: ${error}`);
     throw error;

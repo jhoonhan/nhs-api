@@ -11,6 +11,7 @@ import {
   getRequestsByMonthYear,
   updateShift,
   updateUser,
+  createUser,
 } from "../db/queries.js";
 
 import jwt from "jsonwebtoken";
@@ -181,26 +182,49 @@ export const getUserByIdHandler = async (req, res) => {
   }
 };
 
+export const updateUserHandler = async (req, res) => {
+  const data = req.body;
+  try {
+    await updateUser(data.user_id, data);
+    return res.status(200).json({ status: "success" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ status: "fail", message: error.message });
+  }
+};
+
 export const loginHandler = async (req, res) => {
   const { ms_id, firstname, lastname, email } = req.body;
   try {
-    const user = await getUserById(email, "email");
+    const userRes = await getUserById(email, "email");
+    const user = userRes[0];
 
     // If user was not added to db by the manager.
-    if (!user[0]) {
+    if (!user) {
       throw new Error("User does not exist. Contact your manager.");
     }
 
+    // 8-10 Inactive user
+    if (user.statue === "inactive") {
+      throw new Error("User is inactive. Contact your manager.");
+    }
+
     // If existing user, end prematurely
-    if (user[0].ms_id !== "0") {
-      return res.status(200).json({ status: "success", data: user[0] });
+    if (user.ms_id !== "0") {
+      console.log("exisintg user");
+      return res.status(200).json({ status: "success", data: user });
     }
 
     // If new user
-    await updateUser(user[0].user_id, ["ms_id", ms_id]);
-    user[0].ms_id = ms_id;
+    await updateUser(user.user_id, {
+      ...user,
+      ms_id,
+      status: "active",
+      authority: 1,
+    });
+    user.ms_id = ms_id;
 
-    return res.status(200).json({ status: "success", data: user[0] });
+    return res.status(200).json({ status: "success", data: user });
   } catch (e) {
     console.error(e);
     res.status(500).json({ status: "fail", message: e.message });
@@ -220,14 +244,14 @@ export const updateShiftHandler = async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 };
-export const inviteHandler = async (req, res) => {
-  const { firstname, lastname, band, email } = req.body;
+
+const sendInvitation = async (email) => {
   try {
     const pca = new ConfidentialClientApplication({
       auth: {
-        clientId: "69633545-10c6-4412-b2dc-f395d7eaded7",
-        authority: `https://login.microsoftonline.com/f5ebf3d1-9216-4ea3-94fc-cd4ffde6898a`,
-        clientSecret: "Eus8Q~tZ-Fqtbuxe3BHux4gilQqsiLlBzd5~6aSK",
+        clientId: process.env.CLIENT_ID,
+        authority: `https://login.microsoftonline.com/${process.env.TENANT_ID}`,
+        clientSecret: process.env.CLIENT_SECRET,
       },
     });
 
@@ -252,9 +276,48 @@ export const inviteHandler = async (req, res) => {
       },
     );
 
-    console.log(response);
+    if (response.status !== 201) {
+      throw new Error("Invitation failed");
+    }
 
-    return res.status(201).json({ status: "success" });
+    return response.status === 201;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+// 8-10 Invite user
+export const inviteHandler = async (req, res) => {
+  const { firstname, lastname, email, band, seniority } = req.body;
+  try {
+    // Add to server
+    const userRes = await getUserById(email, "email");
+    if (userRes.length > 0 && userRes[0].ms_id !== "0") {
+      return res.status(200).json({
+        status: "success",
+        message: "User already exists.",
+      });
+    }
+
+    if (userRes.length === 0) {
+      await createUser({
+        firstname,
+        lastname,
+        email,
+        band,
+        seniority,
+      });
+    }
+
+    if (userRes.length === 0 || userRes[0].ms_id === "0") {
+      // Invite user when there is no ms-id(have not logged in yet)
+      await sendInvitation(email);
+    }
+
+    return res.status(200).json({
+      status: "success",
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ status: "fail", message: error.message });
