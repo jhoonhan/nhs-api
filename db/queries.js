@@ -323,7 +323,9 @@ export const createRequestByList = async (requestList) => {
 
   try {
     if (!connection) connection = await pool.getConnection();
-    return await connection.query(QUERY);
+    const res = await connection.query(QUERY);
+    console.log(res);
+    return res;
   } catch (error) {
     console.error(`ERROR: ${error}`);
     throw error;
@@ -410,7 +412,7 @@ export const updateUser = async (user_id, data) => {
                 lastname = '${data.lastname}',
                 email = '${data.email}',
                 ms_id = '${data.ms_id}',
-                status = '${data.status}',
+                user_status = '${data.user_status}',
                 authority = '${data.authority}'
             WHERE user_id = ${user_id};
           `;

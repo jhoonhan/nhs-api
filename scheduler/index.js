@@ -280,6 +280,7 @@ export const computeRoster = async (month, year, compute) => {
     // bypass running algorithm if compute === 0
     let result = {};
     if (compute) {
+      console.log("wtf");
       result = await schedulingAlgorithm(requests, shiftObj, monthData);
       // Change pending status to rejected
       rejectPendingRequests(requests);
