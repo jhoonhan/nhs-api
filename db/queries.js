@@ -2,6 +2,40 @@ import { pool } from "./index.js";
 
 let connection;
 
+export const getAll = async (tableName) => {
+  const QUERY = `SELECT * FROM ${tableName}`;
+  try {
+    if (!connection) connection = await pool.getConnection();
+    const res = await connection.query(QUERY);
+    return res[0];
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+  }
+};
+
+/**
+ * Get a record by multiple key-value pairs
+ * @param column string
+ * @param tableName string
+ * @param id_key_values array
+ * @returns {Promise<*>}
+ */
+export const getByIds = async (column, tableName, id_key_values) => {
+  // Construct the WHERE clause
+  const whereClause = id_key_values
+    .map(({ key, value }) => `${key} = ${value}`)
+    .join(" AND ");
+
+  const QUERY = `SELECT ${column} FROM ${tableName} WHERE ${whereClause}`;
+  try {
+    if (!connection) connection = await pool.getConnection();
+    const res = await connection.query(QUERY);
+    return res[0];
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+  }
+};
+
 export const getAllRequest = async () => {
   const QUERY = "SELECT * FROM request";
   try {
@@ -99,6 +133,41 @@ export const getRequestByShiftId = async (shift_id) => {
     if (!connection) connection = await pool.getConnection();
     const res = await connection.query(QUERY);
     return res[0];
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+    throw error;
+  }
+};
+
+/**
+ * Create rows by list of key-value pairs
+ * @param tableName string
+ * @param keyValueList array
+ * @returns {Promise<void>}
+ */
+export const createByList = async (tableName, keyValueList) => {
+  // Start the query string
+  let QUERY = `INSERT INTO ${tableName} `;
+
+  // Get column names from the keys of the first object in keyValueList
+  const columns = Object.keys(keyValueList[0]);
+  QUERY += `(${columns.join(", ")}) VALUES `;
+
+  // Create an array of strings, each representing a row to insert
+  const values = keyValueList.map(
+    (obj) =>
+      `(${Object.values(obj)
+        .map((value) => `'${value}'`)
+        .join(", ")})`,
+  );
+
+  // Join the array into a single string with each element separated by a comma
+  QUERY += values.join(", ");
+
+  try {
+    if (!connection) connection = await pool.getConnection();
+    const res = await connection.query(QUERY);
+    return res;
   } catch (error) {
     console.error(`ERROR: ${error}`);
     throw error;
@@ -331,6 +400,40 @@ export const createRequestByList = async (requestList) => {
   }
 };
 
+export const overrideCreateRequestByList = async (requestList) => {
+  // Start the query string
+  let QUERY = `INSERT INTO request (shift_id, user_id, priority_user, priority_computed, status) VALUES `;
+
+  // Create an array of strings, each representing a row to insert
+  const values = requestList.map(
+    ({ shift_id, user_id, priority_user }) =>
+      `(${shift_id}, ${user_id}, ${priority_user}, 0, 'approved')`,
+  );
+
+  // Join the array into a single string with each element separated by a comma
+  QUERY += values.join(", ");
+
+  // Add the ON DUPLICATE KEY UPDATE clause
+  QUERY += ` ON DUPLICATE KEY UPDATE priority_user = VALUES(priority_user), priority_computed = VALUES(priority_computed), status = VALUES(status)`;
+
+  // 8-12 Increment approved_staff number
+  const shiftIds = requestList.map(({ shift_id }) => shift_id);
+  // Start the update query string
+  let UPDATE_QUERY = `UPDATE shift SET approved_staff = approved_staff + 1 WHERE shift_id IN (${shiftIds.join(
+    ", ",
+  )})`;
+
+  try {
+    if (!connection) connection = await pool.getConnection();
+    const requestRest = await connection.query(QUERY);
+    const shiftRest = await connection.query(UPDATE_QUERY);
+    return { request: requestRest, shift: shiftRest };
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
+    throw error;
+  }
+};
+
 export const getAllUser = async () => {
   const QUERY = "SELECT * FROM user JOIN nurse ON user.user_id = nurse.user_id";
   try {
@@ -477,5 +580,20 @@ export const updateShift = async (shift_id, data) => {
   } catch (error) {
     console.error(`ERROR: ${error}`);
     throw error;
+  }
+};
+
+export const getPreviousComputation = async (month, year) => {
+  // Construct the WHERE clause
+
+  const QUERY = `SELECT * FROM compute_record
+      WHERE iteration = (SELECT MAX(iteration) FROM compute_record WHERE month = ${month} AND year = ${year})
+      AND month = ${month} AND year = ${year};`;
+  try {
+    if (!connection) connection = await pool.getConnection();
+    const res = await connection.query(QUERY);
+    return res[0];
+  } catch (error) {
+    console.error(`ERROR: ${error}`);
   }
 };

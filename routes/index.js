@@ -15,6 +15,7 @@ import {
   loginHandler,
   inviteHandler,
   updateUserHandler,
+  overrideCreateRequestByListHandler,
 } from "../handlers/index.js";
 
 const appRouter = express.Router();
@@ -28,6 +29,10 @@ appRouter.get("/request-date/:month/:year", getRequestsByMonthYearHandler);
 // appRouter.get("/request/:shift_id", getRequestByShiftIdHandler);
 
 appRouter.post("/request/create-by-list", createRequestByListHandler);
+appRouter.post(
+  "/request/create-by-list-override",
+  overrideCreateRequestByListHandler,
+);
 // appRouter.put("/request-update", updateRequestHandler);
 
 appRouter.get("/roster/:month/:year/:compute", getComputedRosterHandler);

@@ -145,3 +145,18 @@ export const groupRequestByStatus = (requests) => {
 
   return res;
 };
+
+/**
+ ** 8-11 format conflict to match conflict table's schema
+ * @param record_id int
+ * @param conflicts array
+ * @returns array
+ */
+export const formatConflictData = (record_id, conflicts) => {
+  return conflicts.map((userId) => {
+    return {
+      record_id,
+      user_id: userId,
+    };
+  });
+};

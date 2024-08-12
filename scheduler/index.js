@@ -1,4 +1,5 @@
 import {
+  getAll,
   getAllRequest,
   getRequestById,
   getShiftByRange,
@@ -17,6 +18,9 @@ import {
   updateShiftByList,
   resetShift,
   getAllUser,
+  getByIds,
+  getPreviousComputation,
+  createByList,
 } from "../db/queries.js";
 
 import {
@@ -28,6 +32,7 @@ import {
   groupRequestByShiftId,
   groupRequestByUserId,
   groupRequestByStatus,
+  formatConflictData,
 } from "./dataFormatters.js";
 
 import { MAX_PRIORITY } from "../config.js";
@@ -208,8 +213,27 @@ const iterateRequests = (
   };
 };
 
-const schedulingAlgorithm = async (requests, shiftObj, monthData) => {
-  const conflictPriority = [];
+// 8-11 retrieve computation data & conflicts
+const getPreviousConflict = async (record_id) => {
+  console.log("firing");
+  try {
+    const data = await getByIds("*", "conflict", [
+      { key: "record_id", value: record_id },
+    ]);
+    console.log(data);
+    return data.map((conflict) => conflict.user_id);
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
+};
+
+const schedulingAlgorithm = async (
+  requests,
+  shiftObj,
+  monthData,
+  conflictPriority,
+) => {
   const requestApprovalList = [];
   const shiftUpdateListObj = {};
 
@@ -236,8 +260,6 @@ const schedulingAlgorithm = async (requests, shiftObj, monthData) => {
     }
   }
 
-  // Reject all remaining requests
-
   console.log(`Efficiency: ${efficiency}`);
   console.log(conflictPriority);
 
@@ -263,6 +285,7 @@ export const computeRoster = async (month, year, compute) => {
     if (compute === 2) {
       await resetRequest();
       await resetShift();
+      // 8-11 remove previous computation data
       efficiency = 0;
     }
 
@@ -280,7 +303,24 @@ export const computeRoster = async (month, year, compute) => {
     // bypass running algorithm if compute === 0
     let result = {};
     if (compute) {
-      result = await schedulingAlgorithm(requests, shiftObj, monthData);
+      // 8-11 retrieve computation data & conflicts
+      let iteration = 1;
+      let conflictPriority = [];
+      const previousComputeRecord = await getPreviousComputation(month, year);
+      if (previousComputeRecord[0]) {
+        iteration = previousComputeRecord[0].iteration + 1;
+        conflictPriority = await getPreviousConflict(
+          previousComputeRecord[0].record_id,
+        );
+      }
+
+      result = await schedulingAlgorithm(
+        requests,
+        shiftObj,
+        monthData,
+        conflictPriority,
+      );
+
       // Change pending status to rejected
       rejectPendingRequests(requests);
       const formattedRequests = groupRequestByStatus(requests);
@@ -288,6 +328,23 @@ export const computeRoster = async (month, year, compute) => {
       // Submit rejected requests
       await approveRequestByList(formattedRequests.rejected, false);
       await updateShiftByList(result.shiftUpdateList);
+      // 8-11 Record computation data
+      // Create computation data
+      const computeRecord = {
+        month,
+        year,
+        iteration,
+      };
+      const computeRecordRes = await createByList("compute_record", [
+        computeRecord,
+      ]);
+      const record_id = computeRecordRes[0].insertId;
+      // Record new conflict
+      const formattedConflictData = formatConflictData(
+        record_id,
+        result.conflicts,
+      );
+      await createByList("conflict", formattedConflictData);
     } else {
       result = { ...formatComputedResult(monthData, shiftObj), requests };
     }

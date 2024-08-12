@@ -12,6 +12,7 @@ import {
   updateShift,
   updateUser,
   createUser,
+  overrideCreateRequestByList,
 } from "../db/queries.js";
 
 import jwt from "jsonwebtoken";
@@ -81,6 +82,16 @@ export const createRequestHandler = async (req, res) => {
 export const createRequestByListHandler = async (req, res) => {
   try {
     const request = await createRequestByList(req.body);
+    return res.status(201).json({ status: "success", data: request });
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+export const overrideCreateRequestByListHandler = async (req, res) => {
+  try {
+    const request = await overrideCreateRequestByList(req.body);
     return res.status(201).json({ status: "success", data: request });
   } catch (error) {
     console.error(error);

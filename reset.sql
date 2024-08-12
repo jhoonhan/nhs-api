@@ -4,3 +4,6 @@ SET status = 'open',
 
 UPDATE request
 SET status = 'pending';
+
+DELETE FROM conflict;
+DELETE FROM compute_record;
