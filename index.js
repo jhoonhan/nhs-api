@@ -5,7 +5,6 @@ import cors from "cors";
 
 import { expressjwt } from "express-jwt";
 import { expressJwtSecret } from "jwks-rsa";
-import jwtAuthz from "express-jwt-authz";
 
 const app = express();
 

@@ -222,7 +222,6 @@ export const loginHandler = async (req, res) => {
 
     // If existing user, end prematurely
     if (user.ms_id !== "0") {
-      console.log("exisintg user");
       return res.status(200).json({ status: "success", data: user });
     }
 
