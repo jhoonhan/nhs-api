@@ -1,20 +1,8 @@
 import {
-  getAll,
-  getAllRequest,
-  getRequestById,
-  getShiftByRange,
   getShiftByMonthYear,
-  createRequest,
-  deleteRecord,
-  getShiftById,
-  getRequestByShiftId,
-  getPriorityIdByShiftId,
   getRequestsByMonthYear,
-  getUserById,
-  getUserByList,
   approveRequestByList,
   resetRequest,
-  updateShift,
   updateShiftByList,
   resetShift,
   getAllUser,
@@ -299,7 +287,7 @@ export const computeRoster = async (month, year, compute) => {
 
     // Build month data object for local use
     const monthData = formatMonthData(shiftObj);
-    //
+
     // bypass running algorithm if compute === 0
     let result = {};
     if (compute) {
@@ -338,7 +326,7 @@ export const computeRoster = async (month, year, compute) => {
       const computeRecordRes = await createByList("compute_record", [
         computeRecord,
       ]);
-      const record_id = computeRecordRes[0].insertId;
+      const record_id = computeRecordRes.insertId;
       // Record new conflict
       const formattedConflictData = formatConflictData(
         record_id,

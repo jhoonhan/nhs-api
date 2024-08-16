@@ -36,62 +36,6 @@ export const getByIds = async (column, tableName, id_key_values) => {
   }
 };
 
-export const getAllRequest = async () => {
-  const QUERY = "SELECT * FROM request";
-  try {
-    if (!connection) connection = await pool.getConnection();
-
-    const res = await connection.query(QUERY);
-    return res[0];
-  } catch (error) {
-    console.error(`ERROR: ${error}`);
-  }
-};
-
-export const getRequestById = async (shift_id, user_id) => {
-  const QUERY = `SELECT * FROM request 
-                          WHERE shift_id = ${shift_id}
-                            AND user_id = ${user_id}
-                          `;
-  try {
-    if (!connection) connection = await pool.getConnection();
-
-    const res = await connection.query(QUERY);
-    return res[0];
-  } catch (error) {
-    console.error(`ERROR: ${error}`);
-    throw error;
-  }
-};
-
-export const getShiftById = async (shift_id) => {
-  const QUERY = `SELECT * FROM shift 
-                          WHERE shift_id = ${shift_id}
-                          `;
-  try {
-    if (!connection) connection = await pool.getConnection();
-    const res = await connection.query(QUERY);
-    return res[0];
-  } catch (error) {
-    console.error(`ERROR: ${error}`);
-    throw error;
-  }
-};
-
-export const getShiftByRange = async (shift_id_start, shift_id_start_end) => {
-  const QUERY = `SELECT * FROM shift 
-                          WHERE shift_id BETWEEN ${shift_id_start} AND ${shift_id_start_end}
-                          `;
-  try {
-    if (!connection) connection = await pool.getConnection();
-    const res = await connection.query(QUERY);
-    return res[0];
-  } catch (error) {
-    console.error(`ERROR: ${error}`);
-    throw error;
-  }
-};
-
 export const getShiftByMonthYear = async (month, year) => {
   const QUERY = `
         SELECT 
@@ -118,27 +62,6 @@ export const getShiftByMonthYear = async (month, year) => {
   }
 };
 
-export const getRequestByShiftId = async (shift_id) => {
-  const QUERY = `
-        SELECT shift.*, request.*, schedule_priority.priority
-        FROM (SELECT * FROM shift WHERE shift_id = ${shift_id}) AS shift
-        JOIN (SELECT * FROM request WHERE shift_id = ${shift_id} ORDER BY priority_user DESC) AS request
-        ON shift.shift_id = request.shift_id
-        JOIN schedule_priority
-        ON request.user_id = schedule_priority.user_id AND shift.priority_id = schedule_priority.priority_id
-        ORDER BY request.priority_user DESC;
-    `;
-
-  try {
-    if (!connection) connection = await pool.getConnection();
-    const res = await connection.query(QUERY);
-    return res[0];
-  } catch (error) {
-    console.error(`ERROR: ${error}`);
-    throw error;
-  }
-};
-
 /**
  * Create rows by list of key-value pairs
  * @param tableName string
@@ -146,6 +69,8 @@ export const getRequestByShiftId = async (shift_id) => {
  * @returns {Promise<void>}
  */
 export const createByList = async (tableName, keyValueList) => {
+  if (keyValueList.length === 0) return;
+
   // Start the query string
   let QUERY = `INSERT INTO ${tableName} `;
 
@@ -167,48 +92,7 @@ export const createByList = async (tableName, keyValueList) => {
   try {
     if (!connection) connection = await pool.getConnection();
     const res = await connection.query(QUERY);
-    return res;
-  } catch (error) {
-    console.error(`ERROR: ${error}`);
-    throw error;
-  }
-};
-
-export const createRequest = async (
-  shift_id,
-  user_id,
-  priority_user,
-  p_computed,
-) => {
-  const QUERY = `INSERT INTO request 
-                (shift_id, user_id, priority_user, priority_computed) 
-                VALUES (
-                    ${shift_id}, 
-                    ${user_id},
-                    ${priority_user},
-                    ${p_computed}
-                )`;
-  try {
-    if (!connection) connection = await pool.getConnection();
-    const res = await connection.query(QUERY);
-    return res;
-  } catch (error) {
-    console.error(`ERROR: ${error}`);
-    throw error;
-  }
-};
-
-export const updateRequest = async (shift_id, user_id, status) => {
-  const QUERY = `
-                UPDATE request
-                SET
-                    status = '${status}'
-                WHERE shift_id = ${shift_id} AND user_id = ${user_id}
-                `;
-  try {
-    if (!connection) connection = await pool.getConnection();
-    const res = await connection.query(QUERY);
-    return res;
+    return res[0];
   } catch (error) {
     console.error(`ERROR: ${error}`);
     throw error;
@@ -221,8 +105,15 @@ export const approveRequestByList = async (approvalList, approve) => {
   // Updates request rows to "approved"
   const caseStatements = approvalList
     .map(
-      ({ shift_id, user_id, priority_computed }) =>
+      ({ shift_id, user_id }) =>
         `WHEN shift_id = ${shift_id} AND user_id = ${user_id} THEN '${status}'`,
+    )
+    .join(" ");
+
+  const caseStatementsPriority = approvalList
+    .map(
+      ({ shift_id, user_id, priority_user }) =>
+        `WHEN shift_id = ${shift_id} AND user_id = ${user_id} THEN ${priority_user}`,
     )
     .join(" ");
 
@@ -231,6 +122,10 @@ export const approveRequestByList = async (approvalList, approve) => {
     SET status = CASE
       ${caseStatements}
       ELSE status
+    END,
+    priority_computed = CASE
+      ${caseStatementsPriority}
+      ELSE priority_user
     END
     WHERE (shift_id, user_id) IN (${approvalList
       .map(({ shift_id, user_id }) => `(${shift_id}, ${user_id})`)
@@ -290,47 +185,6 @@ export const updateShiftByList = async (updateList) => {
   }
 };
 
-export const deleteRecord = async (shift_id, user_id) => {
-  const QUERY = `
-                  DELETE FROM request
-                  WHERE shift_id = ${shift_id}
-                    AND user_id = ${user_id}
-                  `;
-  try {
-    if (!connection) connection = await pool.getConnection();
-    const res = await connection.query(QUERY);
-
-    if (!res[0].affectedRows) {
-      throw new Error("Record not found");
-    } else {
-      return res;
-    }
-  } catch (error) {
-    console.error(`ERROR: ${error}`);
-    throw error;
-  }
-};
-
-export const getPriorityIdByShiftId = async (shift_id) => {
-  const QUERY = `
-        SELECT * FROM schedule_priority 
-        WHERE priority_id IN (
-            SELECT priority_id 
-            FROM shift 
-            WHERE shift_id = ${shift_id}
-        )
-    `;
-  try {
-    if (!connection) connection = await pool.getConnection();
-
-    const res = await connection.query(QUERY);
-    return res;
-  } catch (error) {
-    console.error(`ERROR: ${error}`);
-    throw error;
-  }
-};
-
 export const getRequestsByMonthYear = async (month, year) => {
   // const QUERY = `
   //       SELECT
@@ -377,37 +231,14 @@ export const getRequestsByMonthYear = async (month, year) => {
   }
 };
 
-export const createRequestByList = async (requestList) => {
-  // Start the query string
-  let QUERY = `INSERT INTO request (shift_id, user_id, priority_user,priority_computed, status) VALUES `;
-
-  // Create an array of strings, each representing a row to insert
-  const values = requestList.map(
-    ({ shift_id, user_id, priority_user }) =>
-      `(${shift_id}, ${user_id}, ${priority_user}, 0, 'pending')`,
-  );
-
-  // Join the array into a single string with each element separated by a comma
-  QUERY += values.join(", ");
-
-  try {
-    if (!connection) connection = await pool.getConnection();
-    const res = await connection.query(QUERY);
-    return res;
-  } catch (error) {
-    console.error(`ERROR: ${error}`);
-    throw error;
-  }
-};
-
 export const overrideCreateRequestByList = async (requestList) => {
   // Start the query string
-  let QUERY = `INSERT INTO request (shift_id, user_id, priority_user, priority_computed, status) VALUES `;
+  let QUERY = `INSERT INTO request (shift_id, user_id, priority_user) VALUES `;
 
   // Create an array of strings, each representing a row to insert
   const values = requestList.map(
     ({ shift_id, user_id, priority_user }) =>
-      `(${shift_id}, ${user_id}, ${priority_user}, 0, 'approved')`,
+      `(${shift_id}, ${user_id}, ${priority_user})`,
   );
 
   // Join the array into a single string with each element separated by a comma
@@ -452,23 +283,6 @@ export const getUserById = async (user_id, type) => {
             JOIN nurse ON user.user_id = nurse.user_id 
           WHERE ${type} = "${user_id}";
         `;
-  try {
-    if (!connection) connection = await pool.getConnection();
-
-    const res = await connection.query(QUERY);
-    return res[0];
-  } catch (error) {
-    console.error(`ERROR: ${error}`);
-    throw error;
-  }
-};
-
-export const getUserByList = async (user_id_list) => {
-  if (user_id_list.length === 0) return [];
-
-  const QUERY = `SELECT * FROM user WHERE user_id IN (${user_id_list.join(
-    ",",
-  )})`;
   try {
     if (!connection) connection = await pool.getConnection();
 
@@ -560,21 +374,6 @@ export const resetShift = async () => {
   try {
     if (!connection) connection = await pool.getConnection();
 
-    const res = await connection.query(QUERY);
-    return res[0];
-  } catch (error) {
-    console.error(`ERROR: ${error}`);
-    throw error;
-  }
-};
-
-export const updateShift = async (shift_id, data) => {
-  const setStatements = Object.entries(data)
-    .map(([key, value]) => `${key} = '${value}'`)
-    .join(", ");
-  const QUERY = `UPDATE shift SET ${setStatements} WHERE shift_id = ${shift_id}`;
-  try {
-    if (!connection) connection = await pool.getConnection();
     const res = await connection.query(QUERY);
     return res[0];
   } catch (error) {
