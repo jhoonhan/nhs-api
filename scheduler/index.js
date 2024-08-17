@@ -123,8 +123,8 @@ const computeConflicts = ({
   monthData,
   requestApprovalList,
 }) => {
-  conflictPriority.forEach((user_id) => {
-    shiftRequests.forEach((request, index) => {
+  conflictPriority.forEach((user_id, index) => {
+    shiftRequests.forEach((request) => {
       if (
         request.user_id === user_id &&
         request.priority_user === priorityLevel - 0 &&
@@ -165,7 +165,17 @@ const computeRequests = ({
   });
 };
 
-const iterateRequests = (
+/**
+ * Iterates through each shift and computes the requests
+ * @param monthData
+ * @param shift
+ * @param shiftRequests
+ * @param priorityLevel
+ * @param conflictPriority
+ * @param requestApprovalList
+ * @param shiftUpdateListObj
+ */
+const iterateShifts = (
   monthData,
   shift,
   shiftRequests,
@@ -174,6 +184,13 @@ const iterateRequests = (
   requestApprovalList,
   shiftUpdateListObj,
 ) => {
+  // if (shift.shift_id <= 6 && shift.shift_id % 2 === 0) {
+  //   console.log(`Given conflict:`);
+  //   console.log(conflictPriority);
+  //   console.log(`ID: ${shift.shift_id}`);
+  // }
+  const rosterShift = monthData.roster[shift.shift_id];
+
   const computeData = {
     conflictPriority,
     conflictPriorityCopy: [...conflictPriority],
@@ -193,22 +210,17 @@ const iterateRequests = (
     shift.approved_staff >= shift.min_staff ? "closed" : "open";
   shiftUpdateListObj[shift.shift_id] = shift;
   shiftUpdateListObj[shift.shift_id].status = shiftStatus;
-  // }
 
-  return {
-    ...monthData.roster[shift.shift_id],
-    status: shiftStatus,
-  };
+  // Updates the monthData object
+  rosterShift.status = shiftStatus;
 };
 
 // 8-11 retrieve computation data & conflicts
 const getPreviousConflict = async (record_id) => {
-  console.log("firing");
   try {
     const data = await getByIds("*", "conflict", [
       { key: "record_id", value: record_id },
     ]);
-    console.log(data);
     return data.map((conflict) => conflict.user_id);
   } catch (e) {
     console.error(e);
@@ -224,40 +236,48 @@ const schedulingAlgorithm = async (
 ) => {
   const requestApprovalList = [];
   const shiftUpdateListObj = {};
+  const shiftRequests = groupRequestByShiftId(requests, monthData);
 
-  // Populate each shift
-  for (let priorityLevel = MAX_PRIORITY; priorityLevel > 0; priorityLevel--) {
-    for (
-      let j = monthData.shiftIdRange.start;
-      j <= monthData.shiftIdRange.end;
-      j++
-    ) {
-      // 7/30 Fix
-      const shiftRequests = groupRequestByShiftId(requests, monthData)[j];
-      const shift = shiftObj.shifts[j];
-      if (shift.status === "closed") continue;
-      monthData.roster[j] = await iterateRequests(
-        monthData,
-        shift,
-        shiftRequests,
-        priorityLevel,
-        conflictPriority,
-        requestApprovalList,
-        shiftUpdateListObj,
-      );
+  try {
+    // Populate each shift
+    for (let priorityLevel = MAX_PRIORITY; priorityLevel > 0; priorityLevel--) {
+      for (
+        let j = monthData.shiftIdRange.start;
+        j <= monthData.shiftIdRange.end;
+        j++
+      ) {
+        // 7/30 Fix
+        const shift = shiftObj.shifts[j];
+        if (shift.status === "closed") continue;
+        iterateShifts(
+          monthData,
+          shift,
+          shiftRequests[j],
+          priorityLevel,
+          conflictPriority,
+          requestApprovalList,
+          shiftUpdateListObj,
+        );
+        // console.log(monthData.roster[j]);
+      }
     }
+
+    console.log(`Efficiency: ${efficiency}`);
+    console.log("Updated Conflict:");
+    console.log(conflictPriority);
+    console.log("------------");
+
+    return {
+      ...formatResultData(monthData, shiftObj),
+      conflicts: conflictPriority,
+      requestApprovalList,
+      shiftUpdateList: formatShiftApprovalList(shiftUpdateListObj),
+      requests,
+    };
+  } catch (error) {
+    console.error(error);
+    throw error;
   }
-
-  console.log(`Efficiency: ${efficiency}`);
-  console.log(conflictPriority);
-
-  return {
-    ...formatResultData(monthData, shiftObj),
-    conflicts: conflictPriority,
-    requestApprovalList,
-    shiftUpdateList: formatShiftApprovalList(shiftUpdateListObj),
-    requests,
-  };
 };
 
 /** Compute Roster
@@ -287,7 +307,7 @@ export const computeRoster = async (month, year, compute) => {
 
     // Build month data object for local use
     const monthData = formatMonthData(shiftObj);
-
+    //
     // bypass running algorithm if compute === 0
     let result = {};
     if (compute) {

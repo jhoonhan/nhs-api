@@ -11,9 +11,9 @@ import {
 
 const appRouter = express.Router();
 
-appRouter.post("/request/create-by-list/:override", createRequestByListHandler);
-
 appRouter.get("/roster/:month/:year/:compute", getComputedRosterHandler);
+
+appRouter.post("/request/:override", createRequestByListHandler);
 
 appRouter.get("/user", getAllUserHandler);
 appRouter.get("/user/:id_type/:user_id", getUserByIdHandler);
