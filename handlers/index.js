@@ -14,7 +14,8 @@ import { computeRoster } from "../scheduler/index.js";
 
 export const createRequestByListHandler = async (req, res) => {
   try {
-    const request = +req.params.override
+    const override = +req.params.override === 1;
+    const request = !override
       ? await createByList("request", req.body)
       : await overrideCreateRequestByList(req.body);
     return res.status(201).json({ status: "success", data: request });

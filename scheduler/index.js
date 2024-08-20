@@ -120,6 +120,10 @@ const computeConflicts = ({
   monthData,
   requestApprovalList,
 }) => {
+  if (shift.shift_id <= 6 && shift.shift_id % 2 === 0) {
+    console.log("Solving Conflict first");
+    console.log(conflictPriority);
+  }
   conflictPriority.forEach((user_id, index) => {
     shiftRequests.forEach((request) => {
       if (
@@ -127,10 +131,14 @@ const computeConflicts = ({
         request.priority_user === priorityLevel - 0 &&
         request.status === "pending"
       ) {
+        console.log("PASS");
         if (shift.approved_staff < shift.min_staff) {
           approveRequest(monthData, shift, request, requestApprovalList);
           // remove from the conflict list
+          console.log(`Conflict resolved for ${user_id}`);
           conflictPriority.splice(index - 1, 1);
+          console.log(conflictPriority);
+          console.log(" ");
           efficiency -= request.priority_user;
         }
       }
@@ -181,11 +189,11 @@ const iterateShifts = (
   requestApprovalList,
   shiftUpdateListObj,
 ) => {
-  // if (shift.shift_id <= 6 && shift.shift_id % 2 === 0) {
-  //   console.log(`Given conflict:`);
-  //   console.log(conflictPriority);
-  //   console.log(`ID: ${shift.shift_id}`);
-  // }
+  if (shift.shift_id <= 6 && shift.shift_id % 2 === 0) {
+    console.log(`Shift ID: ${shift.shift_id}`);
+    console.log(`Given conflict:`);
+    console.log(conflictPriority);
+  }
   const currentRosterShift = monthData.roster[shift.shift_id];
 
   const computeData = {
@@ -199,6 +207,10 @@ const iterateShifts = (
   };
   // Prioritize user with previous conflict
   computeConflicts(computeData);
+  if (shift.shift_id <= 6 && shift.shift_id % 2 === 0) {
+    console.log("### conflict priority after computeConflict");
+    console.log(conflictPriority);
+  }
   computeRequests(computeData);
 
   // Update number of approved staff & status
@@ -209,7 +221,12 @@ const iterateShifts = (
   shiftUpdateListObj[shift.shift_id].status = shiftStatus;
 
   // Mutate the monthData object
-  currentRosterShift.status = shiftStatus;
+  if (shift.shift_id <= 6 && shift.shift_id % 2 === 0) {
+    currentRosterShift.status = shiftStatus;
+    console.log("End conflict");
+    console.log(conflictPriority);
+    console.log(" ");
+  }
 };
 
 // 8-11 retrieve computation data & conflicts
@@ -351,6 +368,7 @@ export const computeRoster = async (month, year, compute) => {
         record_id,
         result.conflicts,
       );
+      console.log(result.conflicts);
       await createByList("conflict", formattedConflictData);
     } else {
       result = { ...formatComputedResult(monthData, shiftObj), requests };
