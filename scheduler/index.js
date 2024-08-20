@@ -25,6 +25,7 @@ import {
 
 import { MAX_PRIORITY } from "../config.js";
 
+const LOG_PRIORITY_DEBUGGER = true;
 let efficiency = 0;
 
 const getUserData = async (requests) => {
@@ -120,10 +121,7 @@ const computeConflicts = ({
   monthData,
   requestApprovalList,
 }) => {
-  if (shift.shift_id <= 6 && shift.shift_id % 2 === 0) {
-    console.log("Solving Conflict first");
-    console.log(conflictPriority);
-  }
+  let resultConflictPriority = [...conflictPriority];
   conflictPriority.forEach((user_id, index) => {
     shiftRequests.forEach((request) => {
       if (
@@ -131,19 +129,20 @@ const computeConflicts = ({
         request.priority_user === priorityLevel - 0 &&
         request.status === "pending"
       ) {
-        console.log("PASS");
         if (shift.approved_staff < shift.min_staff) {
           approveRequest(monthData, shift, request, requestApprovalList);
           // remove from the conflict list
           console.log(`Conflict resolved for ${user_id}`);
-          conflictPriority.splice(index - 1, 1);
-          console.log(conflictPriority);
-          console.log(" ");
+          resultConflictPriority = resultConflictPriority.filter(
+            (id) => id !== user_id,
+          );
+          console.log(resultConflictPriority);
           efficiency -= request.priority_user;
         }
       }
     });
   });
+  return resultConflictPriority;
 };
 const computeRequests = ({
   conflictPriority,
@@ -168,6 +167,7 @@ const computeRequests = ({
       }
     }
   });
+  return conflictPriority;
 };
 
 /**
@@ -189,7 +189,14 @@ const iterateShifts = (
   requestApprovalList,
   shiftUpdateListObj,
 ) => {
-  if (shift.shift_id <= 6 && shift.shift_id % 2 === 0) {
+  if (shiftRequests.length === 0) return;
+
+  if (
+    LOG_PRIORITY_DEBUGGER &&
+    shift.shift_id <= 6 &&
+    shift.shift_id % 2 === 0
+  ) {
+    console.log(`Priority Level: ${priorityLevel}`);
     console.log(`Shift ID: ${shift.shift_id}`);
     console.log(`Given conflict:`);
     console.log(conflictPriority);
@@ -197,8 +204,6 @@ const iterateShifts = (
   const currentRosterShift = monthData.roster[shift.shift_id];
 
   const computeData = {
-    conflictPriority,
-    conflictPriorityCopy: [...conflictPriority],
     shiftRequests,
     priorityLevel,
     shift,
@@ -206,12 +211,37 @@ const iterateShifts = (
     requestApprovalList,
   };
   // Prioritize user with previous conflict
-  computeConflicts(computeData);
-  if (shift.shift_id <= 6 && shift.shift_id % 2 === 0) {
+  const conflictAfterComputeConflicts = computeConflicts({
+    conflictPriority,
+    ...computeData,
+  });
+  if (
+    LOG_PRIORITY_DEBUGGER &&
+    shift.shift_id <= 6 &&
+    shift.shift_id % 2 === 0
+  ) {
     console.log("### conflict priority after computeConflict");
-    console.log(conflictPriority);
+    console.log(conflictAfterComputeConflicts);
   }
-  computeRequests(computeData);
+  const conflictAfterComputeRequests = computeRequests({
+    conflictPriority: conflictAfterComputeConflicts,
+    conflictPriorityCopy: [...conflictAfterComputeConflicts],
+    ...computeData,
+  });
+  if (
+    LOG_PRIORITY_DEBUGGER &&
+    shift.shift_id <= 6 &&
+    shift.shift_id % 2 === 0
+  ) {
+    console.log("### conflict priority after computeRequest");
+    console.log(conflictAfterComputeRequests);
+  }
+
+  // Mutate conflictPriority
+  conflictPriority.length = 0;
+  conflictAfterComputeRequests.forEach((id) => {
+    conflictPriority.push(id);
+  });
 
   // Update number of approved staff & status
   // 8/8 - bug fix. After first iteration of computation, the shift status is not updated to closed when condition is met.
@@ -221,7 +251,11 @@ const iterateShifts = (
   shiftUpdateListObj[shift.shift_id].status = shiftStatus;
 
   // Mutate the monthData object
-  if (shift.shift_id <= 6 && shift.shift_id % 2 === 0) {
+  if (
+    LOG_PRIORITY_DEBUGGER &&
+    shift.shift_id <= 6 &&
+    shift.shift_id % 2 === 0
+  ) {
     currentRosterShift.status = shiftStatus;
     console.log("End conflict");
     console.log(conflictPriority);
