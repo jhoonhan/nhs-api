@@ -88,20 +88,17 @@ const approveRequest = (
 ) => {
   const approvedStaffs = roster[shift.shift_id].approvedStaffs;
   // Validation
-  if (approvedStaffs.includes(request.user_id)) {
-    console.error("Duplicate staff in shift");
-    return;
-  }
-
   if ((!shift.week_id) in weeks) {
     throw new Error("Week not found");
   }
+  if (approvedStaffs.includes(request.user_id)) {
+    throw new Error("Duplicate staff in shift");
+  }
+  // Check if more than 3 request per week
   const currentWeek = weeks[shift.week_id];
   const count = currentWeek.filter((x) => x === request.user_id).length;
-
   if (count >= 3) {
-    console.error("Staff max/week already reached");
-    return;
+    throw new Error("Staff max/week already reached");
   }
 
   currentWeek.push(request.user_id);
@@ -189,7 +186,7 @@ const iterateShifts = (
   //   console.log(conflictPriority);
   //   console.log(`ID: ${shift.shift_id}`);
   // }
-  const rosterShift = monthData.roster[shift.shift_id];
+  const currentRosterShift = monthData.roster[shift.shift_id];
 
   const computeData = {
     conflictPriority,
@@ -211,8 +208,8 @@ const iterateShifts = (
   shiftUpdateListObj[shift.shift_id] = shift;
   shiftUpdateListObj[shift.shift_id].status = shiftStatus;
 
-  // Updates the monthData object
-  rosterShift.status = shiftStatus;
+  // Mutate the monthData object
+  currentRosterShift.status = shiftStatus;
 };
 
 // 8-11 retrieve computation data & conflicts
@@ -239,26 +236,25 @@ const schedulingAlgorithm = async (
   const shiftRequests = groupRequestByShiftId(requests, monthData);
 
   try {
-    // Populate each shift
+    // 4-2. Iterate through each shift in each priority level
     for (let priorityLevel = MAX_PRIORITY; priorityLevel > 0; priorityLevel--) {
       for (
         let j = monthData.shiftIdRange.start;
         j <= monthData.shiftIdRange.end;
         j++
       ) {
-        // 7/30 Fix
-        const shift = shiftObj.shifts[j];
-        if (shift.status === "closed") continue;
+        // Skip closed shifts
+        if (shiftObj.shifts[j].status === "closed") continue;
+
         iterateShifts(
           monthData,
-          shift,
+          shiftObj.shifts[j],
           shiftRequests[j],
           priorityLevel,
           conflictPriority,
           requestApprovalList,
           shiftUpdateListObj,
         );
-        // console.log(monthData.roster[j]);
       }
     }
 
@@ -289,7 +285,7 @@ const schedulingAlgorithm = async (
  */
 export const computeRoster = async (month, year, compute) => {
   try {
-    // Resets requests and shifts to pending for overhaul computation
+    // 1. Resets requests and shifts to pending for overhaul computation
     if (compute === 2) {
       await resetRequest();
       await resetShift();
@@ -297,9 +293,9 @@ export const computeRoster = async (month, year, compute) => {
       efficiency = 0;
     }
 
+    // 2. Data Retrieval
     // Build request array for local use
-    const requestsThisMonth = await getRequestsByMonthYear(month, year);
-    const requests = requestsThisMonth[0];
+    const requests = await getRequestsByMonthYear(month, year);
 
     // Build shift object for local use
     const shiftData = await getShiftByMonthYear(month, year);
@@ -307,13 +303,15 @@ export const computeRoster = async (month, year, compute) => {
 
     // Build month data object for local use
     const monthData = formatMonthData(shiftObj);
-    //
-    // bypass running algorithm if compute === 0
+
     let result = {};
+
+    // bypass running algorithm if compute === 0
     if (compute) {
-      // 8-11 retrieve computation data & conflicts
       let iteration = 1;
       let conflictPriority = [];
+
+      // 3. retrieve previous computation data & conflicts
       const previousComputeRecord = await getPreviousComputation(month, year);
       if (previousComputeRecord[0]) {
         iteration = previousComputeRecord[0].iteration + 1;
@@ -322,6 +320,7 @@ export const computeRoster = async (month, year, compute) => {
         );
       }
 
+      // 4. Main function
       result = await schedulingAlgorithm(
         requests,
         shiftObj,

@@ -224,7 +224,8 @@ export const getRequestsByMonthYear = async (month, year) => {
   try {
     if (!connection) connection = await pool.getConnection();
 
-    return await connection.query(QUERY);
+    const res = await connection.query(QUERY);
+    return res[0];
   } catch (error) {
     console.error(`ERROR: ${error}`);
     throw error;
