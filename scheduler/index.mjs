@@ -73,7 +73,7 @@ const getUnusedPriorities = (userRequest) => {
   return range.filter((num) => !priorities.includes(num));
 };
 
-const rejectPendingRequests = (requests) => {
+export const rejectPendingRequests = (requests) => {
   requests.forEach((request) => {
     if (request.status === "pending") {
       request.status = "rejected";
@@ -81,7 +81,7 @@ const rejectPendingRequests = (requests) => {
   });
 };
 
-const approveRequest = (
+export const approveRequest = (
   { weeks, roster },
   shift,
   request,
@@ -113,7 +113,7 @@ const approveRequest = (
   });
 };
 
-const computeConflicts = ({
+export const computeConflicts = ({
   conflictPriority,
   shiftRequests,
   priorityLevel,

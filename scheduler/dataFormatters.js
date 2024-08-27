@@ -1,5 +1,5 @@
 // Init data structure
-const initShifts = (shiftIdStart, shiftIdEnd) => {
+export const initShifts = (shiftIdStart, shiftIdEnd) => {
   const data = {};
   for (let i = shiftIdStart; i <= shiftIdEnd; i++) {
     data[i] = {
@@ -10,7 +10,7 @@ const initShifts = (shiftIdStart, shiftIdEnd) => {
   return data;
 };
 
-const initWeeks = (weekIdStart, weekIdEnd) => {
+export const initWeeks = (weekIdStart, weekIdEnd) => {
   const data = {};
   for (let i = weekIdStart; i <= weekIdEnd; i++) {
     data[i] = [];

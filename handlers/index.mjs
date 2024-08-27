@@ -131,7 +131,7 @@ export const loginHandler = async (req, res) => {
 
 // SHIFTS
 
-const sendInvitation = async (email) => {
+export const sendInvitation = async (email) => {
   try {
     const pca = new ConfidentialClientApplication({
       auth: {
