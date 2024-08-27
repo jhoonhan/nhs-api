@@ -9,7 +9,7 @@ import {
   getByIds,
   getPreviousComputation,
   createByList,
-} from "../db/queries.js";
+} from "../db/queries.mjs";
 
 import {
   formatShiftData,

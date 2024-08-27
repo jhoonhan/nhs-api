@@ -1,13 +1,12 @@
 import express from "express";
-import appRouter from "./routes/index.js";
-import { connectToDatabase } from "./db/index.js";
+import appRouter from "./routes/index.mjs";
+import { connectToDatabase } from "./db/index.mjs";
 import cors from "cors";
 
 import { expressjwt } from "express-jwt";
 import { expressJwtSecret } from "jwks-rsa";
 import helmet from "helmet";
 import morgan from "morgan";
-import cookieParser from "cookie-parser";
 import xss from "xss-clean";
 import hpp from "hpp";
 import compression from "compression";
@@ -43,7 +42,7 @@ app.use(
 
 app.use(compression());
 
-// 8-10 JWT Authorization
+// JWT Authorization
 app.use(
   expressjwt({
     secret: expressJwtSecret({

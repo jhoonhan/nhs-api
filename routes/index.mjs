@@ -7,7 +7,7 @@ import {
   loginHandler,
   inviteHandler,
   updateUserHandler,
-} from "../handlers/index.js";
+} from "../handlers/index.mjs";
 
 const appRouter = express.Router();
 

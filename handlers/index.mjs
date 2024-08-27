@@ -5,12 +5,12 @@ import {
   createUser,
   overrideCreateRequestByList,
   createByList,
-} from "../db/queries.js";
+} from "../db/queries.mjs";
 
 import axios from "axios";
 import { ConfidentialClientApplication } from "@azure/msal-node";
 
-import { computeRoster } from "../scheduler/index.js";
+import { computeRoster } from "../scheduler/index.mjs";
 
 export const createRequestByListHandler = async (req, res) => {
   try {
@@ -177,15 +177,16 @@ const sendInvitation = async (email) => {
 export const inviteHandler = async (req, res) => {
   const { firstname, lastname, email, band, seniority } = req.body;
   try {
-    // Add to server
+    // Search of user by email
     const userRes = await getUserById(email, "email");
+    // Skip if user already exists and accepted the invitation
     if (userRes.length > 0 && userRes[0].ms_id !== "0") {
       return res.status(200).json({
         status: "success",
-        message: "User already exists.",
+        message: "User already exists and accepted the invitation",
       });
     }
-
+    // If no user found, create a new user record
     if (userRes.length === 0) {
       await createUser({
         firstname,
@@ -195,12 +196,10 @@ export const inviteHandler = async (req, res) => {
         seniority,
       });
     }
-
-    if (userRes.length === 0 || userRes[0].ms_id === "0") {
-      // Invite user when there is no ms-id(have not logged in yet)
+    // Invite user when there is no ms-id (have not logged in yet)
+    if (userRes[0].ms_id === "0") {
       await sendInvitation(email);
     }
-
     return res.status(200).json({
       status: "success",
     });
