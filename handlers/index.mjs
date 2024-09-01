@@ -140,17 +140,14 @@ export const sendInvitation = async (email) => {
         clientSecret: process.env.CLIENT_SECRET,
       },
     });
-
     const accessTokenResponse = await pca.acquireTokenByClientCredential({
       scopes: ["https://graph.microsoft.com/.default"],
     });
-
     const invitation = {
       invitedUserEmailAddress: email,
       inviteRedirectUrl: process.env.REDIRECT_URI,
       sendInvitationMessage: true,
     };
-
     const response = await axios.post(
       "https://graph.microsoft.com/v1.0/invitations",
       invitation,
@@ -161,11 +158,9 @@ export const sendInvitation = async (email) => {
         },
       },
     );
-
     if (response.status !== 201) {
       throw new Error("Invitation failed");
     }
-
     return response.status === 201;
   } catch (error) {
     console.error(error);

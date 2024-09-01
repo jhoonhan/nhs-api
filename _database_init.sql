@@ -60,22 +60,14 @@ CREATE TABLE `day` (
   `day_id` int NOT NULL AUTO_INCREMENT,
   `week_id` int DEFAULT NULL,
   `day_num` int NOT NULL,
+  `month` int DEFAULT NULL,
   `status` enum('closed','pending') NOT NULL DEFAULT 'pending',
   PRIMARY KEY (`day_id`),
   KEY `week_id` (`week_id`),
-  CONSTRAINT `day_ibfk_1` FOREIGN KEY (`week_id`) REFERENCES `week` (`week_id`)
+  CONSTRAINT `day_ibfk_1` FOREIGN KEY (`week_id`) REFERENCES `week` (`week_id`),
+  CONSTRAINT `day_chk_1` CHECK (((`month` >= 1) and (`month` <= 12)))
 ) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `day`
---
-
-LOCK TABLES `day` WRITE;
-/*!40000 ALTER TABLE `day` DISABLE KEYS */;
-INSERT INTO `day` VALUES (1,34,4,'pending'),(2,34,5,'pending'),(3,34,6,'pending'),(4,34,7,'pending'),(5,34,8,'pending'),(6,34,9,'pending'),(7,34,10,'pending'),(8,35,11,'pending'),(9,35,12,'pending'),(10,35,13,'pending'),(11,35,14,'pending'),(12,35,15,'pending'),(13,35,16,'pending'),(14,35,17,'pending'),(15,36,18,'pending'),(16,36,19,'pending'),(17,36,20,'pending'),(18,36,21,'pending'),(19,36,22,'pending'),(20,36,23,'pending'),(21,36,24,'pending'),(22,37,25,'pending'),(23,37,26,'pending'),(24,37,27,'pending'),(25,37,28,'pending'),(26,37,29,'pending'),(27,37,30,'pending'),(28,37,31,'pending'),(29,38,1,'pending'),(30,38,2,'pending'),(31,38,3,'pending'),(32,38,4,'pending'),(33,38,5,'pending'),(34,38,6,'pending'),(35,38,7,'pending'),(36,39,8,'pending'),(37,39,9,'pending'),(38,39,10,'pending'),(39,39,11,'pending'),(40,39,12,'pending'),(41,39,13,'pending'),(42,39,14,'pending');
-/*!40000 ALTER TABLE `day` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `nurse`
@@ -118,7 +110,7 @@ CREATE TABLE `request` (
   `priority_user` int NOT NULL,
   `priority_computed` int NOT NULL,
   `request_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `status` enum('approved','pending') NOT NULL DEFAULT 'pending',
+  `status` enum('approved','pending','rejected') NOT NULL DEFAULT 'pending',
   PRIMARY KEY (`shift_id`,`user_id`),
   KEY `shift_id_index` (`shift_id`) USING BTREE,
   KEY `request_ibfk_2` (`user_id`),
@@ -134,6 +126,33 @@ CREATE TABLE `request` (
 LOCK TABLES `request` WRITE;
 /*!40000 ALTER TABLE `request` DISABLE KEYS */;
 /*!40000 ALTER TABLE `request` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `schedule_priority`
+--
+
+DROP TABLE IF EXISTS `schedule_priority`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `schedule_priority` (
+  `priority_id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `priority` int NOT NULL,
+  PRIMARY KEY (`priority_id`,`user_id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `schedule_priority_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `schedule_priority`
+--
+
+LOCK TABLES `schedule_priority` WRITE;
+/*!40000 ALTER TABLE `schedule_priority` DISABLE KEYS */;
+INSERT INTO `schedule_priority` VALUES (1,1,1),(1,2,2),(1,3,3),(1,4,4),(1,5,5),(1,6,6),(1,7,7),(1,8,8),(1,9,9),(1,10,10),(1,11,11),(1,12,12),(1,13,13),(1,14,14),(1,15,15),(2,1,15),(2,2,14),(2,3,13),(2,4,12),(2,5,11),(2,6,10),(2,7,9),(2,8,8),(2,9,7),(2,10,6),(2,11,5),(2,12,4),(2,13,3),(2,14,2),(2,15,1),(3,1,1),(3,2,2),(3,3,3),(3,4,4),(3,5,5),(3,6,6),(3,7,7),(3,8,8),(3,9,9),(3,10,10),(3,11,11),(3,12,12),(3,13,13),(3,14,14),(3,15,15);
+/*!40000 ALTER TABLE `schedule_priority` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -157,13 +176,22 @@ CREATE TABLE `shift` (
   PRIMARY KEY (`shift_id`),
   KEY `charge_nurse` (`charge_nurse`),
   KEY `day_id_index` (`day_id`) USING BTREE,
+  KEY `shift_ibfk_2` (`priority_id`),
   CONSTRAINT `shift_ibfk_1` FOREIGN KEY (`day_id`) REFERENCES `day` (`day_id`),
   CONSTRAINT `shift_ibfk_2` FOREIGN KEY (`priority_id`) REFERENCES `schedule_priority` (`priority_id`),
   CONSTRAINT `shift_ibfk_3` FOREIGN KEY (`charge_nurse`) REFERENCES `nurse` (`user_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=85 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
+--
+-- Dumping data for table `shift`
+--
 
+LOCK TABLES `shift` WRITE;
+/*!40000 ALTER TABLE `shift` DISABLE KEYS */;
+INSERT INTO `shift` VALUES (1,1,1,1,0,NULL,3,5,4,'closed'),(2,1,1,0,0,NULL,2,4,3,'closed'),(3,2,1,1,0,NULL,3,5,4,'closed'),(4,2,1,0,0,NULL,2,4,3,'closed'),(5,3,1,1,0,NULL,3,5,4,'closed'),(6,3,1,0,0,NULL,2,4,3,'closed'),(7,4,1,1,0,NULL,3,5,4,'closed'),(8,4,1,0,0,NULL,2,4,3,'closed'),(9,5,1,1,0,NULL,3,5,4,'closed'),(10,5,1,0,0,NULL,2,4,3,'closed'),(11,6,1,1,0,NULL,3,5,4,'closed'),(12,6,1,0,0,NULL,2,4,3,'closed'),(13,7,1,1,0,NULL,3,5,4,'closed'),(14,7,1,0,0,NULL,2,4,3,'closed'),(15,8,1,1,0,NULL,3,5,4,'closed'),(16,8,1,0,0,NULL,2,4,3,'closed'),(17,9,1,1,0,NULL,3,5,4,'closed'),(18,9,1,0,0,NULL,2,4,3,'closed'),(19,10,1,1,0,NULL,3,5,4,'closed'),(20,10,1,0,0,NULL,2,4,3,'closed'),(21,11,1,1,0,NULL,3,5,4,'closed'),(22,11,1,0,0,NULL,2,4,3,'closed'),(23,12,1,1,0,NULL,3,5,4,'closed'),(24,12,1,0,0,NULL,2,4,3,'closed'),(25,13,1,1,0,NULL,3,5,4,'closed'),(26,13,1,0,0,NULL,2,4,3,'closed'),(27,14,1,1,0,NULL,3,5,4,'closed'),(28,14,1,0,0,NULL,2,4,3,'closed'),(29,15,1,1,0,NULL,3,5,4,'closed'),(30,15,1,0,0,NULL,2,4,3,'closed'),(31,16,1,1,0,NULL,3,5,4,'closed'),(32,16,1,0,0,NULL,2,4,3,'closed'),(33,17,1,1,0,NULL,3,5,4,'closed'),(34,17,1,0,0,NULL,2,4,3,'closed'),(35,18,1,1,0,NULL,3,5,4,'closed'),(36,18,2,0,0,NULL,2,4,3,'closed'),(37,19,2,1,0,NULL,3,5,4,'closed'),(38,19,2,0,0,NULL,2,4,3,'closed'),(39,20,2,1,0,NULL,3,5,4,'closed'),(40,20,2,0,0,NULL,2,4,3,'closed'),(41,21,2,1,0,NULL,3,5,4,'closed'),(42,21,2,0,0,NULL,2,4,3,'closed'),(43,22,2,1,0,NULL,3,5,4,'closed'),(44,22,2,0,0,NULL,2,4,3,'closed'),(45,23,2,1,0,NULL,3,5,4,'closed'),(46,23,2,0,0,NULL,2,4,3,'closed'),(47,24,2,1,0,NULL,3,5,4,'closed'),(48,24,2,0,0,NULL,2,4,3,'closed'),(49,25,2,1,0,NULL,3,5,4,'closed'),(50,25,2,0,0,NULL,2,4,3,'closed'),(51,26,2,1,0,NULL,3,5,4,'closed'),(52,26,2,0,0,NULL,2,4,3,'closed'),(53,27,2,1,0,NULL,3,5,4,'closed'),(54,27,2,0,0,NULL,2,4,3,'closed'),(55,28,2,1,0,NULL,3,5,4,'closed'),(56,28,2,0,0,NULL,2,4,3,'closed'),(57,29,2,1,0,NULL,3,5,4,'closed'),(58,29,2,0,0,NULL,2,4,3,'closed'),(59,30,2,1,0,NULL,3,5,4,'closed'),(60,30,2,0,0,NULL,2,4,3,'closed'),(61,31,2,1,0,NULL,3,5,4,'closed'),(62,31,2,0,0,NULL,2,4,3,'closed'),(63,32,2,1,0,NULL,3,5,4,'closed'),(64,32,2,0,0,NULL,2,4,3,'closed'),(65,33,2,1,0,NULL,3,5,4,'closed'),(66,33,2,0,0,NULL,2,4,3,'closed'),(67,34,2,1,0,NULL,3,5,4,'closed'),(68,34,2,0,0,NULL,2,4,3,'closed'),(69,35,2,1,0,NULL,3,5,4,'closed'),(70,35,2,0,0,NULL,2,4,3,'closed'),(71,36,3,1,0,NULL,3,5,4,'closed'),(72,36,3,0,0,NULL,2,4,3,'closed'),(73,37,3,1,0,NULL,3,5,4,'closed'),(74,37,3,0,0,NULL,2,4,3,'closed'),(75,38,3,1,0,NULL,3,5,4,'closed'),(76,38,3,0,0,NULL,2,4,3,'closed'),(77,39,3,1,0,NULL,3,5,4,'closed'),(78,39,3,0,0,NULL,2,4,3,'closed'),(79,40,3,1,0,NULL,3,5,4,'closed'),(80,40,3,0,0,NULL,2,4,3,'closed'),(81,41,3,1,0,NULL,3,5,4,'closed'),(82,41,3,0,0,NULL,2,4,3,'closed'),(83,42,3,1,0,NULL,3,5,4,'closed'),(84,42,3,0,0,NULL,2,4,3,'closed');
+/*!40000 ALTER TABLE `shift` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `user`
@@ -192,8 +220,6 @@ INSERT INTO `user` VALUES (1,'joe','han','1@t.com','test'),(2,'yeweon','kim','2@
 /*!40000 ALTER TABLE `user` ENABLE KEYS */;
 UNLOCK TABLES;
 
-
-
 --
 -- Table structure for table `week`
 --
@@ -205,14 +231,17 @@ CREATE TABLE `week` (
   `week_id` int NOT NULL AUTO_INCREMENT,
   `user_id` int NOT NULL,
   `priority_id` int NOT NULL,
+  `month` int DEFAULT NULL,
   `year` int NOT NULL,
   `week_start` date NOT NULL,
   `week_end` date NOT NULL,
   `status` enum('completed','pending') NOT NULL DEFAULT 'pending',
   PRIMARY KEY (`week_id`,`user_id`),
   KEY `user_id` (`user_id`),
+  KEY `week_ibfk_2` (`priority_id`),
   CONSTRAINT `week_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`),
-  CONSTRAINT `week_ibfk_2` FOREIGN KEY (`priority_id`) REFERENCES `schedule_priority` (`priority_id`)
+  CONSTRAINT `week_ibfk_2` FOREIGN KEY (`priority_id`) REFERENCES `schedule_priority` (`priority_id`),
+  CONSTRAINT `week_chk_1` CHECK (((`month` >= 1) and (`month` <= 12)))
 ) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -227,4 +256,4 @@ CREATE TABLE `week` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-07-10 22:55:58
+-- Dump completed on 2024-07-12 20:35:55
