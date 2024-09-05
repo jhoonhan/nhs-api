@@ -41,19 +41,19 @@ export const createApp = () => {
   app.use(compression());
 
 // JWT Authorization
-  app.use(
-    expressjwt({
-      secret: expressJwtSecret({
-        jwksUri:
-          "https://login.microsoftonline.com/" +
-          process.env.TENANT_ID +
-          "/discovery/v2.0/keys",
-      }),
-      audience: process.env.API_SCOPE,
-      issuer: `https://sts.windows.net/${process.env.TENANT_ID}/`,
-      algorithms: ["RS256"],
-    }),
-  );
+//   app.use(
+//     expressjwt({
+//       secret: expressJwtSecret({
+//         jwksUri:
+//           "https://login.microsoftonline.com/" +
+//           process.env.TENANT_ID +
+//           "/discovery/v2.0/keys",
+//       }),
+//       audience: process.env.API_SCOPE,
+//       issuer: `https://sts.windows.net/${process.env.TENANT_ID}/`,
+//       algorithms: ["RS256"],
+//     }),
+//   );
 
   app.use("/api/v1", appRouter);
 

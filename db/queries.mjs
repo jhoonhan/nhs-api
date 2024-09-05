@@ -5,7 +5,9 @@ let connection;
 export const getAll = async (tableName) => {
   const QUERY = `SELECT * FROM ${tableName}`;
   try {
+    console.log(connection);
     if (!connection) connection = await pool.getConnection();
+    console.log(connection);
     const res = await connection.query(QUERY);
     return res[0];
   } catch (error) {

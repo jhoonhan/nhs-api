@@ -22,13 +22,12 @@ const poolProd = createPool({
 const connectToDatabase = async (env) => {
   try {
     env === 'dev' ? await poolDev.getConnection() : await poolProd.getConnection();
-    console.log(`Connected to ${env} database`);
   } catch (error) {
     console.error('Failed to connect to database', error);
     throw error;
   }
 };
 
-const pool = process.env.NODE_ENV === 'production' ? poolProd : poolDev;
+const pool = process.env.NODE_ENV === 'dev' ? poolDev : poolProd;
 
 export {pool, connectToDatabase};

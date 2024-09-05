@@ -12,7 +12,7 @@ const server = app.listen(PORT, () => {
 
 connectToDatabase(process.env.NODE_ENV)
   .then(() => {
-    console.log("Connected to database");
+    console.log(`Connected to ${process.env.NODE_ENV} database`);
   })
   .catch((error) => {
     console.error("Failed to connect to database", error);
