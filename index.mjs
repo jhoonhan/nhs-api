@@ -5,11 +5,12 @@ const app = createApp();
 
 const PORT = process.env.PORT || 5001;
 
+
 const server = app.listen(PORT, () => {
   console.log("Server is running on port", PORT);
 });
 
-connectToDatabase()
+connectToDatabase(process.env.NODE_ENV)
   .then(() => {
     console.log("Connected to database");
   })
